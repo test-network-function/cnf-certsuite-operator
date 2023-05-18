@@ -10,4 +10,14 @@ plugins:
   scorecard.sdk.operatorframework.io/v2: {}
 projectName: tnf-op
 repo: github.com/greyerof/cnf-certification-operator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: redhat.com
+  group: cnf-certifications
+  kind: CnfCertificationSuiteRun
+  path: github.com/greyerof/cnf-certification-operator/api/v1alpha1
+  version: v1alpha1
 version: "3"
