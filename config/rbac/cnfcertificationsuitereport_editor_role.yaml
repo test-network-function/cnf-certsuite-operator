@@ -1,0 +1,31 @@
+# permissions for end users to edit cnfcertificationsuitereports.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: cnfcertificationsuitereport-editor-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: tnf-op
+    app.kubernetes.io/part-of: tnf-op
+    app.kubernetes.io/managed-by: kustomize
+  name: cnfcertificationsuitereport-editor-role
+rules:
+- apiGroups:
+  - cnf-certifications.redhat.com
+  resources:
+  - cnfcertificationsuitereports
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cnf-certifications.redhat.com
+  resources:
+  - cnfcertificationsuitereports/status
+  verbs:
+  - get
