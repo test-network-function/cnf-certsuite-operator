@@ -37,14 +37,22 @@ spec:
             description: CnfCertificationSuiteRunSpec defines the desired state of
               CnfCertificationSuiteRun
             properties:
-              foo:
-                description: Foo is an example field of CnfCertificationSuiteRun.
-                  Edit cnfcertificationsuiterun_types.go to remove/update
+              config:
+                description: Config holds the cnf certification suite yaml config.
                 type: string
+            required:
+            - config
             type: object
           status:
             description: CnfCertificationSuiteRunStatus defines the observed state
               of CnfCertificationSuiteRun
+            properties:
+              phase:
+                description: Phase holds the current phase of the CNF Certification
+                  Suite run.
+                type: string
+            required:
+            - phase
             type: object
         type: object
     served: true

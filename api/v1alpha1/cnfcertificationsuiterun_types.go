@@ -28,14 +28,17 @@ type CnfCertificationSuiteRunSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of CnfCertificationSuiteRun. Edit cnfcertificationsuiterun_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// Config holds the cnf certification suite yaml config.
+	Config string `json:"config"`
 }
 
 // CnfCertificationSuiteRunStatus defines the observed state of CnfCertificationSuiteRun
 type CnfCertificationSuiteRunStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
+	// Phase holds the current phase of the CNF Certification Suite run.
+	Phase string `json:"phase"`
 }
 
 //+kubebuilder:object:root=true
