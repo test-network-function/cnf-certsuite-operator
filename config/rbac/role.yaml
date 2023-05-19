@@ -6,6 +6,36 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - pods/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - pods/status
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+- apiGroups:
   - cnf-certifications.redhat.com
   resources:
   - cnfcertificationsuiteruns

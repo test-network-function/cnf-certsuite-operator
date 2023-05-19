@@ -48,6 +48,9 @@ var cnfRunJobId int
 //+kubebuilder:rbac:groups=cnf-certifications.redhat.com,resources=cnfcertificationsuiteruns,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=cnf-certifications.redhat.com,resources=cnfcertificationsuiteruns/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=cnf-certifications.redhat.com,resources=cnfcertificationsuiteruns/finalizers,verbs=update
+//+kubebuilder:rbac:groups="",resources=pods,verbs=create;update;get;list;delete
+//+kubebuilder:rbac:groups="",resources=pods/status,verbs=create;update;get;list;delete
+//+kubebuilder:rbac:groups="",resources=pods/finalizers,verbs=create;update;get;list;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
