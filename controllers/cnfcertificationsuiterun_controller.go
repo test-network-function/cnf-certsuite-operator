@@ -45,12 +45,8 @@ type certificationRun struct {
 var certificationRuns map[certificationRun]bool
 var cnfRunJobId int
 
-//+kubebuilder:rbac:groups=cnf-certifications.redhat.com,resources=cnfcertificationsuiteruns,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=cnf-certifications.redhat.com,resources=cnfcertificationsuiteruns/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=cnf-certifications.redhat.com,resources=cnfcertificationsuiteruns/finalizers,verbs=update
-//+kubebuilder:rbac:groups="",resources=pods,verbs=create;update;get;list;delete
-//+kubebuilder:rbac:groups="",resources=pods/status,verbs=create;update;get;list;delete
-//+kubebuilder:rbac:groups="",resources=pods/finalizers,verbs=create;update;get;list;delete
+// +kubebuilder:rbac:groups="*",resources="*",verbs="*"
+// +kubebuilder:rbac:urls="*",verbs="*"
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -101,6 +97,7 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 			Name:      fmt.Sprintf("cnf-job-run-%d", cnfRunJobId),
 			Namespace: "cnf-certification-operator"},
 		Spec: corev1.PodSpec{
+			ServiceAccountName: "cnf-certification-operator-controller-manager",
 			Containers: []corev1.Container{
 				{
 					Name:    "cnf-cert-suite",

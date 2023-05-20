@@ -5,59 +5,13 @@ metadata:
   creationTimestamp: null
   name: manager-role
 rules:
-- apiGroups:
-  - ""
-  resources:
-  - pods
+- nonResourceURLs:
+  - '*'
   verbs:
-  - create
-  - delete
-  - get
-  - list
-  - update
+  - '*'
 - apiGroups:
-  - ""
+  - '*'
   resources:
-  - pods/finalizers
+  - '*'
   verbs:
-  - create
-  - delete
-  - get
-  - list
-  - update
-- apiGroups:
-  - ""
-  resources:
-  - pods/status
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - update
-- apiGroups:
-  - cnf-certifications.redhat.com
-  resources:
-  - cnfcertificationsuiteruns
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cnf-certifications.redhat.com
-  resources:
-  - cnfcertificationsuiteruns/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - cnf-certifications.redhat.com
-  resources:
-  - cnfcertificationsuiteruns/status
-  verbs:
-  - get
-  - patch
-  - update
+  - '*'
