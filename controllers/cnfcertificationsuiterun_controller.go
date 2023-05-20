@@ -98,6 +98,7 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 			Namespace: "cnf-certification-operator"},
 		Spec: corev1.PodSpec{
 			ServiceAccountName: "cnf-certification-operator-controller-manager",
+			RestartPolicy:      "Never",
 			Containers: []corev1.Container{
 				{
 					Name:    "cnf-cert-suite",
@@ -107,10 +108,12 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 					Env: []corev1.EnvVar{
 						{
 							Name:  "TNF_LOG_LEVEL",
-							Value: "trace"},
+							Value: "trace",
+						},
 						{
 							Name:  "PFLT_DOCKERCONFIG",
-							Value: "/usr/tnf/preflight.dummy"},
+							Value: "/usr/tnf/preflight.dummy",
+						},
 					},
 					ImagePullPolicy: "Always",
 				},
