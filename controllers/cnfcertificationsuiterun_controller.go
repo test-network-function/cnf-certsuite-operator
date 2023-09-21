@@ -101,10 +101,22 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 			RestartPolicy:      "Never",
 			Containers: []corev1.Container{
 				{
+					Name:            "cnf-cert-suite-sidecar",
+					Image:           "quay.io/greyerof/cnf-op:sidecarv1",
+					ImagePullPolicy: "IfNotPresent",
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "cnf-cert-suite-output",
+							ReadOnly:  true,
+							MountPath: "/cnf-cert-output",
+						},
+					},
+				},
+				{
 					Name:    "cnf-cert-suite",
 					Image:   "quay.io/greyerof/tests:cnfsuiteopv2",
 					Command: []string{"./run-cnf-suites.sh"},
-					Args:    []string{"-l", "observability"},
+					Args:    []string{"-l", "observability", "-o", "/cnf-cert-output"},
 					Env: []corev1.EnvVar{
 						{
 							Name:  "TNF_LOG_LEVEL",
@@ -116,8 +128,20 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 						},
 					},
 					ImagePullPolicy: "Always",
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "cnf-cert-suite-output",
+							MountPath: "/cnf-cert-output",
+						},
+					},
 				},
 			},
+			Volumes: []corev1.Volume{{
+				Name: "cnf-cert-suite-output",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			}},
 		},
 		Status: corev1.PodStatus{},
 	}
@@ -127,30 +151,6 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 		log.Log.Error(err, "Failed to create CNF Cert job")
 		return ctrl.Result{}, nil
 	}
-
-	// var friendFound bool
-	// if err := r.List(ctx, &podList); err != nil {
-	// 	log.Error(err, "unable to list pods")
-	// } else {
-	// 	for _, item := range podList.Items {
-	// 		if item.GetName() == foo.Spec.Name {
-	// 			log.Info("pod linked to a foo custom resource found", "name", item.GetName())
-	// 			friendFound = true
-	// 		}
-	// 	}
-	// }
-
-	// // Update Foo' happy status
-	// foo.Status.Happy = friendFound
-	// if err := r.Status().Update(ctx, &foo); err != nil {
-	// 	log.Error(err, "unable to update foo's happy status", "status", friendFound)
-	// 	return ctrl.Result{}, err
-	// }
-	// log.Info("foo's happy status updated", "status", friendFound)
-
-	// log.Info("foo custom resource reconciled")
-
-	// return ctrl.Result{}, nil
 
 	return ctrl.Result{}, nil
 }
