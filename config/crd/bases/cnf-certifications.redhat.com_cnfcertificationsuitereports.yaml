@@ -37,10 +37,22 @@ spec:
             description: CnfCertificationSuiteReportSpec defines the desired state
               of CnfCertificationSuiteReport
             properties:
-              foo:
-                description: Foo is an example field of CnfCertificationSuiteReport.
-                  Edit cnfcertificationsuitereport_types.go to remove/update
-                type: string
+              results:
+                description: Results holds the result of each test case
+                items:
+                  description: TestCaseResult holds a test case result
+                  properties:
+                    result:
+                      type: string
+                    testCaseName:
+                      type: string
+                  required:
+                  - result
+                  - testCaseName
+                  type: object
+                type: array
+            required:
+            - results
             type: object
           status:
             description: CnfCertificationSuiteReportStatus defines the observed state

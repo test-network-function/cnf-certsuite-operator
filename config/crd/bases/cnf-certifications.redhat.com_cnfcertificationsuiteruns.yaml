@@ -37,11 +37,25 @@ spec:
             description: CnfCertificationSuiteRunSpec defines the desired state of
               CnfCertificationSuiteRun
             properties:
-              config:
-                description: Config holds the cnf certification suite yaml config.
+              configMapName:
+                description: ConfigMapName holds the cnf certification suite yaml
+                  config.
+                type: string
+              labelsFilter:
+                description: LabelsFilter holds the labels filter/expression of the
+                  test cases we want to run.
+                type: string
+              logLevel:
+                description: LogLevel sets the CNF Certification Suite log level (TNF_LOG_LEVEL)
+                type: string
+              timeout:
+                description: Total timeout for the CNF Cert Suite to run.
                 type: string
             required:
-            - config
+            - configMapName
+            - labelsFilter
+            - logLevel
+            - timeout
             type: object
           status:
             description: CnfCertificationSuiteRunStatus defines the observed state

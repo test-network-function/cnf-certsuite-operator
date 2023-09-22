@@ -10,4 +10,9 @@ metadata:
   name: cnfcertificationsuiterun-sample
   namespace: cnf-certification-operator
 spec:
-  config: "This is my config!"
+  labelsFilter: "access-control && !access-control-container-host-port"
+  logLevel: "info"
+  timeout: "2h"
+
+  configMapName: "configtest"
+

@@ -31,6 +31,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	cnfCertPodNamePrefix = "cnf-job-run"
+)
+
 // CnfCertificationSuiteRunReconciler reconciles a CnfCertificationSuiteRun object
 type CnfCertificationSuiteRunReconciler struct {
 	client.Client
@@ -42,8 +46,12 @@ type certificationRun struct {
 	namespace string
 }
 
-var certificationRuns map[certificationRun]bool
-var cnfRunJobId int
+var (
+	// certificationRuns maps a certificationRun to a pod name
+	certificationRuns map[certificationRun]string
+	// Holds an autoincremental CNF Cert Suite pod id
+	cnfRunPodId int
+)
 
 // +kubebuilder:rbac:groups="*",resources="*",verbs="*"
 // +kubebuilder:rbac:urls="*",verbs="*"
@@ -69,11 +77,15 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 
 	var cnfrun cnfcertificationsv1alpha1.CnfCertificationSuiteRun
 	if err := r.Get(ctx, req.NamespacedName, &cnfrun); err != nil {
-		logrus.Errorf("Failed to fetch CnfCertificationSuiteRun CR %v", req.NamespacedName)
+		logrus.Infof("CnfCertificationSuiteRun CR %s (ns %s) not found.", req.Name, req.NamespacedName)
 
-		logrus.Infof("Checking current running certification job for CnfCertificationSuiteRun %v", req.Namespace)
-		if certificationRuns[reqCertificationRun] {
-			logrus.Infof("There is a running Certification Suite job: cancelling it.")
+		if podName, exist := certificationRuns[reqCertificationRun]; exist {
+			logrus.Infof("CnfCertificationSuiteRun has been deleted. Removing the associated CNF Cert job pod %v", podName)
+
+			err := r.Delete(context.TODO(), &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: podName, Namespace: req.Namespace}})
+			if err != nil {
+				logrus.Errorf("Failed to remove CNF Cert Job pod %s in namespace %s: %v", req.Name, req.Namespace, err)
+			}
 
 			delete(certificationRuns, reqCertificationRun)
 		}
@@ -81,28 +93,45 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if certificationRuns[reqCertificationRun] {
-		logrus.Infof("There's a certification job running already. Ignoring changes in CnfCertificationSuiteRun %v", reqCertificationRun)
+	if podName, exist := certificationRuns[reqCertificationRun]; exist {
+		logrus.Infof("There's a certification job pod=%v running already. Ignoring changes in CnfCertificationSuiteRun %v", podName, reqCertificationRun)
 		return ctrl.Result{}, nil
 	}
 
 	logrus.Infof("New CNF Certification Job run requested: %v", reqCertificationRun)
-	certificationRuns[reqCertificationRun] = true
 
-	// Launch the tnf pod
-	cnfRunJobId++
+	cnfRunPodId++
+	podName := fmt.Sprintf("%s-%d", cnfCertPodNamePrefix, cnfRunPodId)
+
+	// Store the new run & associated CNF Cert pod name
+	certificationRuns[reqCertificationRun] = podName
+
+	logrus.Infof("Running CNF Certification Suite container (job id=%d) with labels %q, log level %q and timeout: %q",
+		cnfRunPodId, cnfrun.Spec.LabelsFilter, cnfrun.Spec.LogLevel, cnfrun.Spec.TimeOut)
+
+	// Launch the pod with the CNF Cert Suite container plus the sidecar container to fetch the results.
 	cnfCertJobPod := corev1.Pod{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("cnf-job-run-%d", cnfRunJobId),
+			Name:      fmt.Sprintf("%s-%d", cnfCertPodNamePrefix, cnfRunPodId),
 			Namespace: "cnf-certification-operator"},
 		Spec: corev1.PodSpec{
 			ServiceAccountName: "cnf-certification-operator-controller-manager",
 			RestartPolicy:      "Never",
 			Containers: []corev1.Container{
 				{
-					Name:            "cnf-cert-suite-sidecar",
-					Image:           "quay.io/greyerof/cnf-op:sidecarv1",
+					Name:  "cnf-cert-suite-sidecar",
+					Image: "quay.io/greyerof/cnf-op:sidecarv1",
+					Env: []corev1.EnvVar{
+						{
+							Name: "MY_POD_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "metadata.name",
+								},
+							},
+						},
+					},
 					ImagePullPolicy: "IfNotPresent",
 					VolumeMounts: []corev1.VolumeMount{
 						{
@@ -116,15 +145,19 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 					Name:    "cnf-cert-suite",
 					Image:   "quay.io/greyerof/tests:cnfsuiteopv2",
 					Command: []string{"./run-cnf-suites.sh"},
-					Args:    []string{"-l", "observability", "-o", "/cnf-cert-output"},
+					Args:    []string{"-l", cnfrun.Spec.LabelsFilter, "-o", "/cnf-cert-output"},
 					Env: []corev1.EnvVar{
 						{
 							Name:  "TNF_LOG_LEVEL",
-							Value: "trace",
+							Value: cnfrun.Spec.LogLevel,
 						},
 						{
 							Name:  "PFLT_DOCKERCONFIG",
 							Value: "/usr/tnf/preflight.dummy",
+						},
+						{
+							Name:  "TNF_CONFIGURATION_PATH",
+							Value: "/cnf-cert-config/tnf_config.yaml",
 						},
 					},
 					ImagePullPolicy: "Always",
@@ -133,15 +166,32 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 							Name:      "cnf-cert-suite-output",
 							MountPath: "/cnf-cert-output",
 						},
+						{
+							Name:      "cnf-cert-suite-config",
+							ReadOnly:  true,
+							MountPath: "/cnf-cert-config",
+						},
 					},
 				},
 			},
-			Volumes: []corev1.Volume{{
-				Name: "cnf-cert-suite-output",
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
+			Volumes: []corev1.Volume{
+				{
+					Name: "cnf-cert-suite-output",
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
 				},
-			}},
+				{
+					Name: "cnf-cert-suite-config",
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: cnfrun.Spec.ConfigMapName,
+							},
+						},
+					},
+				},
+			},
 		},
 		Status: corev1.PodStatus{},
 	}
@@ -158,7 +208,7 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 // SetupWithManager sets up the controller with the Manager.
 func (r *CnfCertificationSuiteRunReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	logrus.Infof("Setting up CnfCertificationSuiteRunReconciler's manager.")
-	certificationRuns = map[certificationRun]bool{}
+	certificationRuns = map[certificationRun]string{}
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&cnfcertificationsv1alpha1.CnfCertificationSuiteRun{}).

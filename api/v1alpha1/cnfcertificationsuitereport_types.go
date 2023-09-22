@@ -28,8 +28,14 @@ type CnfCertificationSuiteReportSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of CnfCertificationSuiteReport. Edit cnfcertificationsuitereport_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// Results holds the result of each test case
+	Results []TestCaseResult `json:"results"`
+}
+
+// TestCaseResult holds a test case result
+type TestCaseResult struct {
+	TestCaseName string `json:"testCaseName"`
+	Result       string `json:"result"`
 }
 
 // CnfCertificationSuiteReportStatus defines the observed state of CnfCertificationSuiteReport

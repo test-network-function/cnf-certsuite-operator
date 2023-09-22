@@ -28,8 +28,15 @@ type CnfCertificationSuiteRunSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Config holds the cnf certification suite yaml config.
-	Config string `json:"config"`
+	// LabelsFilter holds the labels filter/expression of the test cases we want to run.
+	LabelsFilter string `json:"labelsFilter"`
+	// LogLevel sets the CNF Certification Suite log level (TNF_LOG_LEVEL)
+	LogLevel string `json:"logLevel"`
+
+	// Total timeout for the CNF Cert Suite to run.
+	TimeOut string `json:"timeout"`
+	// ConfigMapName holds the cnf certification suite yaml config.
+	ConfigMapName string `json:"configMapName"`
 }
 
 // CnfCertificationSuiteRunStatus defines the observed state of CnfCertificationSuiteRun

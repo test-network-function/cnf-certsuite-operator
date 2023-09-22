@@ -17,33 +17,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// import (
-// 	"log"
-// 	corev1 "k8s.io/api/core/v1"
-// ctrl "sigs.k8s.io/controller-runtime"
-// "k8s.io/apimachinery/pkg/runtime"
-// clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-// 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-// 	yourCRDScheme "some/import/path"
-// )
-// scheme := runtime.New()
-// _ = clientgoscheme.AddToScheme(scheme)
-// _ = yourCRDScheme.AddToScheme(scheme)
-
-// kubeconfig := ctrl.GetConfigOrDie()
-// kubeclient, err := client.New(kubeconfig, client.Options{ Scheme: scheme })
-// if err != nil {
-// 	log.Fatal(err)
-// }
-
-// # replace with some yourCRDScheme type here
-// var pod corev1.Pod
-// err = c.Get(context.Background(), client.ObjectKey{
-// Namespace: "namespace",
-// Name:      "name",
-// }, &pod)
-
 // This CNF Certification sidecar container expects to be running in the same
 // pod as the CNF Cert Suite container.
 //
@@ -82,23 +55,6 @@ func main() {
 		logrus.Fatalf("Failed to get k8s client: %v", err)
 	}
 
-	// list := &cnfcertificationsv1alpha1.CnfCertificationSuiteReportList{}
-
-	// err = k8sClient.List(context.TODO(), list, &client.ListOptions{Namespace: "cnf-certification-operator"})
-	// if err != nil {
-	// 	logrus.Fatalf("Failed to list CnfCertificationSuiteReportList objects in ns cnf-certification-operator: %v", err)
-	// }
-
-	// err = k8sClient.Create(context.TODO(), &cnfcertificationsv1alpha1.CnfCertificationSuiteReport{
-	// 	TypeMeta:   metav1.TypeMeta{},
-	// 	ObjectMeta: metav1.ObjectMeta{Name: "myreport", Namespace: "cnf-certification-operator"},
-	// 	Spec:       cnfcertificationsv1alpha1.CnfCertificationSuiteReportSpec{Foo: "hi"},
-	// 	Status:     cnfcertificationsv1alpha1.CnfCertificationSuiteReportStatus{},
-	// })
-	// if err != nil {
-	// 	logrus.Fatalf("Failed to create CnfCertificationSuiteReport object in ns cnf-certification-operator: %v", err)
-	// }
-
 	const claimFilePath = "/cnf-cert-output/claim.json"
 
 	for {
@@ -125,19 +81,22 @@ func main() {
 			logrus.Fatalf("Failed to unmarshal claim json: %v", err)
 		}
 
-		results := ""
+		results := []cnfcertificationsv1alpha1.TestCaseResult{}
 		for i := range claimContent.Claim.Results {
 			tsResults := claimContent.Claim.Results[i]
 			for j := range tsResults {
 				tcResult := tsResults[j]
-				results += fmt.Sprintf("%s: %s\n", tcResult.TestID.ID, tcResult.State)
+				results = append(results, cnfcertificationsv1alpha1.TestCaseResult{
+					TestCaseName: tcResult.TestID.ID,
+					Result:       tcResult.State,
+				})
 			}
-
 		}
 
+		reportCrName := fmt.Sprintf("%s-report", os.Getenv("MY_POD_NAME"))
 		err = k8sClient.Create(context.TODO(), &cnfcertificationsv1alpha1.CnfCertificationSuiteReport{
-			ObjectMeta: metav1.ObjectMeta{Name: "myreport", Namespace: "cnf-certification-operator"},
-			Spec:       cnfcertificationsv1alpha1.CnfCertificationSuiteReportSpec{Foo: results},
+			ObjectMeta: metav1.ObjectMeta{Name: reportCrName, Namespace: "cnf-certification-operator"},
+			Spec:       cnfcertificationsv1alpha1.CnfCertificationSuiteReportSpec{Results: results},
 			Status:     cnfcertificationsv1alpha1.CnfCertificationSuiteReportStatus{},
 		})
 		if err != nil {
