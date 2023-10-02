@@ -1,8 +1,8 @@
 # tnf-op
-// TODO(user): Add simple overview of use/purpose
+Red Hat's CNF Certification Suite Operator PoC
 
 ## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+Proof of Concept for a Kubernetes/Openshift Operator running the [CNF Certification Suite Container](https://github.com/test-network-function/cnf-certification-test).
 
 ## Getting Started
 You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.
@@ -64,6 +64,11 @@ make run
 ```
 
 **NOTE:** You can also run this in one step by running: `make install run`
+
+3. Sample CnfCertificationSuiteRun CR:
+```
+oc apply -f cert-run.yaml
+```
 
 ### Modifying the API definitions
 If you are editing the API definitions, generate the manifests such as CRs or CRDs using:
