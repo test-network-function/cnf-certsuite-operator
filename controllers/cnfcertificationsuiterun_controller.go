@@ -132,7 +132,7 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 							},
 						},
 					},
-					ImagePullPolicy: "IfNotPresent",
+					ImagePullPolicy: "Always",
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      "cnf-cert-suite-output",
