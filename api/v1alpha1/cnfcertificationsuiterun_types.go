@@ -37,6 +37,8 @@ type CnfCertificationSuiteRunSpec struct {
 	TimeOut string `json:"timeout"`
 	// ConfigMapName holds the cnf certification suite yaml config.
 	ConfigMapName string `json:"configMapName"`
+	// PreflightSecretName holds the secret name for preflight's dockerconfig.
+	PreflightSecretName string `json:"preflightSecretName"`
 }
 
 // CnfCertificationSuiteRunStatus defines the observed state of CnfCertificationSuiteRun

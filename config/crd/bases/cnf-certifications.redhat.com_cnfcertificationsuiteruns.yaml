@@ -48,6 +48,10 @@ spec:
               logLevel:
                 description: LogLevel sets the CNF Certification Suite log level (TNF_LOG_LEVEL)
                 type: string
+              preflightSecretName:
+                description: PreflightSecretName holds the secret name for preflight's
+                  dockerconfig.
+                type: string
               timeout:
                 description: Total timeout for the CNF Cert Suite to run.
                 type: string
@@ -55,6 +59,7 @@ spec:
             - configMapName
             - labelsFilter
             - logLevel
+            - preflightSecretName
             - timeout
             type: object
           status:

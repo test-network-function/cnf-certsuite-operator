@@ -1,7 +1,8 @@
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: configtest
+  name: cnf-certsuite-config
   namespace: cnf-certification-operator
 data:
   tnf_config.yaml: |
@@ -18,7 +19,7 @@ data:
       - nameSuffix: "test-network-function.com"
         scalable: false
       - nameSuffix: "tutorial.my.domain"
-        scalable: true 
+        scalable: true
     managedDeployments:
       - name: jack
     managedStatefulsets:
@@ -51,4 +52,3 @@ data:
       - "hazelcast-platform-controller-manager-service"
       - "hazelcast-platform-webhook-service"
       - "new-pro-controller-manager-metrics-service"
-

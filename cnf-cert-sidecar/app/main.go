@@ -17,6 +17,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	sideCarResultsFolderEnvVar = "TNF_RESULTS_FOLDER"
+	claimFileName              = "claim.json"
+)
+
 // This CNF Certification sidecar container expects to be running in the same
 // pod as the CNF Cert Suite container.
 //
@@ -55,8 +60,10 @@ func main() {
 		logrus.Fatalf("Failed to get k8s client: %v", err)
 	}
 
-	const claimFilePath = "/cnf-cert-output/claim.json"
+	claimFolder := os.Getenv(sideCarResultsFolderEnvVar)
+	logrus.Infof("Claim file folder: %v", claimFolder)
 
+	claimFilePath := claimFolder + "/" + claimFileName
 	for {
 		_, err := os.Stat(claimFilePath)
 		if os.IsNotExist(err) {
