@@ -9,12 +9,17 @@ data => tnf_config.yaml: |\n\
   ...
 }
 
+map secret1 {
+data => preflight_dockerconfig.json: |\n\
+  eyAiYXV0aHMiOiB7fSB9Cg==
+}
 
 map myFirstRun {
 Kind => CnfCertificationSuiteRun
 Name => myFirstRun
 
 ConfigMap *--> configMap1
+Secret *--> secret1
 Labels => "telco && !observability-container-logging"
 }
 
@@ -23,6 +28,7 @@ Kind => CnfCertificationSuiteRun
 Name => mySecondRun
 
 ConfigMap *--> configMap1
+Secret *--> secret1
 Labels => "observability-container-logging"
 }
 @enduml
