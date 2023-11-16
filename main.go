@@ -33,6 +33,7 @@ import (
 
 	cnfcertificationsv1alpha1 "github.com/greyerof/cnf-certification-operator/api/v1alpha1"
 	"github.com/greyerof/cnf-certification-operator/controllers"
+	"github.com/greyerof/cnf-certification-operator/controllers/controllerhelper"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -89,9 +90,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.CnfCertificationSuiteRunReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+	if err = (&controllers.CnfCertificationSuiteRunReconcilerWrapper{
+		CnfCertSuiteRunReconciler: &controllerhelper.CnfCertificationSuiteRunReconciler{
+			Client: mgr.GetClient(),
+			Scheme: mgr.GetScheme(),
+		},
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "CnfCertificationSuiteRun")
 		os.Exit(1)
