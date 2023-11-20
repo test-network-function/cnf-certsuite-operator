@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: quay.io/greyerof/cnf-op
-  newTag: initialtestv3
+  newTag: initialtestv4
