@@ -28,21 +28,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	cnfcertificationsv1alpha1 "github.com/greyerof/cnf-certification-operator/api/v1alpha1"
+	"github.com/greyerof/cnf-certification-operator/controllers/cnf-cert-job"
+	"github.com/greyerof/cnf-certification-operator/controllers/definitions"
+
 	"github.com/sirupsen/logrus"
-)
-
-const (
-	CnfCertPodNamePrefix = "cnf-job-run"
-
-	CnfCertSuiteBaseFolder      = "/cnf-certsuite"
-	CnfCnfCertSuiteConfigFolder = CnfCertSuiteBaseFolder + "/config/suite"
-	CnfPreflightConfigFolder    = CnfCertSuiteBaseFolder + "/config/preflight"
-	CnfCertSuiteResultsFolder   = CnfCertSuiteBaseFolder + "/results"
-
-	CnfCertSuiteConfigFilePath    = CnfCnfCertSuiteConfigFolder + "/tnf_config.yaml"
-	PreflightDockerConfigFilePath = CnfPreflightConfigFolder + "/preflight_dockerconfig.json"
-
-	SideCarResultsFolderEnvVar = "TNF_RESULTS_FOLDER"
 )
 
 // CnfCertificationSuiteRunReconciler reconciles a CnfCertificationSuiteRun object
@@ -111,7 +100,7 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 	logrus.Infof("New CNF Certification Job run requested: %v", reqCertificationRun)
 
 	cnfRunPodId++
-	podName := fmt.Sprintf("%s-%d", CnfCertPodNamePrefix, cnfRunPodId)
+	podName := fmt.Sprintf("%s-%d", definitions.CnfCertPodNamePrefix, cnfRunPodId)
 
 	// Store the new run & associated CNF Cert pod name
 	certificationRuns[reqCertificationRun] = podName
@@ -120,117 +109,11 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 		cnfRunPodId, cnfrun.Spec.LabelsFilter, cnfrun.Spec.LogLevel, cnfrun.Spec.TimeOut)
 
 	// Launch the pod with the CNF Cert Suite container plus the sidecar container to fetch the results.
-	cnfCertJobPod := corev1.Pod{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%d", CnfCertPodNamePrefix, cnfRunPodId),
-			Namespace: "cnf-certification-operator"},
-		Spec: corev1.PodSpec{
-			ServiceAccountName: "cnf-certification-operator-controller-manager",
-			RestartPolicy:      "Never",
-			Containers: []corev1.Container{
-				{
-					Name:  "cnf-certsuite-sidecar",
-					Image: "quay.io/greyerof/cnf-op:sidecarv2",
-					Env: []corev1.EnvVar{
-						{
-							Name: "MY_POD_NAME",
-							ValueFrom: &corev1.EnvVarSource{
-								FieldRef: &corev1.ObjectFieldSelector{
-									FieldPath: "metadata.name",
-								},
-							},
-						},
-						{
-							Name:  SideCarResultsFolderEnvVar,
-							Value: CnfCertSuiteResultsFolder,
-						},
-					},
-					ImagePullPolicy: "Always",
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      "cnf-certsuite-output",
-							ReadOnly:  true,
-							MountPath: CnfCertSuiteResultsFolder,
-						},
-					},
-				},
-				{
-					Name:    "cnf-certsuite",
-					Image:   "quay.io/testnetworkfunction/cnf-certification-test:unstable",
-					Command: []string{"./run-cnf-suites.sh"},
-					Args:    []string{"-l", cnfrun.Spec.LabelsFilter, "-o", CnfCertSuiteResultsFolder},
-					Env: []corev1.EnvVar{
-						{
-							Name:  "TNF_LOG_LEVEL",
-							Value: cnfrun.Spec.LogLevel,
-						},
-						{
-							Name:  "PFLT_DOCKERCONFIG",
-							Value: PreflightDockerConfigFilePath,
-						},
-						{
-							Name:  "TNF_CONFIGURATION_PATH",
-							Value: CnfCertSuiteConfigFilePath,
-						},
-						{
-							Name:  "TNF_NON_INTRUSIVE_ONLY",
-							Value: "true",
-						},
-					},
-					ImagePullPolicy: "Always",
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      "cnf-certsuite-output",
-							MountPath: CnfCertSuiteResultsFolder,
-						},
-						{
-							Name:      "cnf-certsuite-config",
-							ReadOnly:  true,
-							MountPath: CnfCnfCertSuiteConfigFolder,
-						},
-						{
-							Name:      "cnf-certsuite-preflight-dockerconfig",
-							ReadOnly:  true,
-							MountPath: CnfPreflightConfigFolder,
-						},
-					},
-				},
-			},
-			Volumes: []corev1.Volume{
-				{
-					Name: "cnf-certsuite-output",
-					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
-					},
-				},
-				{
-					Name: "cnf-certsuite-config",
-					VolumeSource: corev1.VolumeSource{
-						ConfigMap: &corev1.ConfigMapVolumeSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: cnfrun.Spec.ConfigMapName,
-							},
-						},
-					},
-				},
-				{
-					Name: "cnf-certsuite-preflight-dockerconfig",
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: cnfrun.Spec.PreflightSecretName,
-						},
-					},
-				},
-			},
-		},
-		Status: corev1.PodStatus{},
-	}
-
-	err := r.Create(ctx, &cnfCertJobPod)
+	config := cnfcertjob.NewConfig(cnfrun.Spec.LabelsFilter, cnfrun.Spec.LogLevel, cnfrun.Spec.ConfigMapName, cnfrun.Spec.PreflightSecretName)
+	cnfCertJobPod := cnfcertjob.New(config, podName)
+	err := r.Create(ctx, cnfCertJobPod)
 	if err != nil {
 		log.Log.Error(err, "Failed to create CNF Cert job")
-		return ctrl.Result{}, nil
 	}
 
 	return ctrl.Result{}, nil
