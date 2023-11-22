@@ -40,14 +40,14 @@ type CnfCertificationSuiteRunReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-type CertificationRun struct {
-	Name      string
-	Namespace string
+type certificationRun struct {
+	name      string
+	namespace string
 }
 
 var (
 	// certificationRuns maps a certificationRun to a pod name
-	certificationRuns map[CertificationRun]string
+	certificationRuns map[certificationRun]string
 	// Holds an autoincremental CNF Cert Suite pod id
 	cnfRunPodId int
 )
@@ -69,9 +69,9 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 
 	logrus.Infof("Reconciling CnfCertificationSuiteRun CRD.")
 
-	reqCertificationRun := CertificationRun{
-		Name:      req.Name,
-		Namespace: req.Namespace,
+	reqCertificationRun := certificationRun{
+		name:      req.Name,
+		namespace: req.Namespace,
 	}
 
 	var cnfrun cnfcertificationsv1alpha1.CnfCertificationSuiteRun
@@ -122,7 +122,7 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 // SetupWithManager sets up the controller with the Manager.
 func (r *CnfCertificationSuiteRunReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	logrus.Infof("Setting up CnfCertificationSuiteRunReconciler's manager.")
-	certificationRuns = map[CertificationRun]string{}
+	certificationRuns = map[certificationRun]string{}
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&cnfcertificationsv1alpha1.CnfCertificationSuiteRun{}).
