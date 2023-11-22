@@ -22,20 +22,22 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	cnfcertificationsv1alpha1 "github.com/greyerof/cnf-certification-operator/api/v1alpha1"
 	"github.com/greyerof/cnf-certification-operator/controllers/cnf-cert-job"
-	"github.com/greyerof/cnf-certification-operator/controllers/controllerhelper"
+	"github.com/greyerof/cnf-certification-operator/controllers/definitions"
 
 	"github.com/sirupsen/logrus"
 )
 
-// CnfCertificationSuiteRunReconcilerWrapper which consists of CnfCertificationSuiteRunReconciler object
-type CnfCertificationSuiteRunReconcilerWrapper struct {
-	CnfCertSuiteRunReconciler *controllerhelper.CnfCertificationSuiteRunReconciler
+// CnfCertificationSuiteRunReconciler reconciles a CnfCertificationSuiteRun object
+type CnfCertificationSuiteRunReconciler struct {
+	client.Client
+	Scheme *runtime.Scheme
 }
 
 type CertificationRun struct {
@@ -62,7 +64,7 @@ var (
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
-func (r *CnfCertificationSuiteRunReconcilerWrapper) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
 	logrus.Infof("Reconciling CnfCertificationSuiteRun CRD.")
@@ -73,13 +75,13 @@ func (r *CnfCertificationSuiteRunReconcilerWrapper) Reconcile(ctx context.Contex
 	}
 
 	var cnfrun cnfcertificationsv1alpha1.CnfCertificationSuiteRun
-	if err := r.CnfCertSuiteRunReconciler.Get(ctx, req.NamespacedName, &cnfrun); err != nil {
+	if err := r.Get(ctx, req.NamespacedName, &cnfrun); err != nil {
 		logrus.Infof("CnfCertificationSuiteRun CR %s (ns %s) not found.", req.Name, req.NamespacedName)
 
 		if podName, exist := certificationRuns[reqCertificationRun]; exist {
 			logrus.Infof("CnfCertificationSuiteRun has been deleted. Removing the associated CNF Cert job pod %v", podName)
 
-			err := r.CnfCertSuiteRunReconciler.Delete(context.TODO(), &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: podName, Namespace: req.Namespace}})
+			err := r.Delete(context.TODO(), &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: podName, Namespace: req.Namespace}})
 			if err != nil {
 				logrus.Errorf("Failed to remove CNF Cert Job pod %s in namespace %s: %v", req.Name, req.Namespace, err)
 			}
@@ -98,7 +100,7 @@ func (r *CnfCertificationSuiteRunReconcilerWrapper) Reconcile(ctx context.Contex
 	logrus.Infof("New CNF Certification Job run requested: %v", reqCertificationRun)
 
 	cnfRunPodId++
-	podName := fmt.Sprintf("%s-%d", controllerhelper.CnfCertPodNamePrefix, cnfRunPodId)
+	podName := fmt.Sprintf("%s-%d", definitions.CnfCertPodNamePrefix, cnfRunPodId)
 
 	// Store the new run & associated CNF Cert pod name
 	certificationRuns[reqCertificationRun] = podName
@@ -107,14 +109,18 @@ func (r *CnfCertificationSuiteRunReconcilerWrapper) Reconcile(ctx context.Contex
 		cnfRunPodId, cnfrun.Spec.LabelsFilter, cnfrun.Spec.LogLevel, cnfrun.Spec.TimeOut)
 
 	// Launch the pod with the CNF Cert Suite container plus the sidecar container to fetch the results.
-	cnfCertJobPod := cnfcertjob.NewConfig(cnfrun, cnfRunPodId)
-	cnfcertjob.Deploy(cnfCertJobPod, r.CnfCertSuiteRunReconciler, ctx)
+	config := cnfcertjob.NewConfig(cnfrun.Spec.LabelsFilter, cnfrun.Spec.LogLevel, cnfrun.Spec.ConfigMapName, cnfrun.Spec.PreflightSecretName)
+	cnfCertJobPod := cnfcertjob.New(config, podName)
+	err := r.Create(ctx, cnfCertJobPod)
+	if err != nil {
+		log.Log.Error(err, "Failed to create CNF Cert job")
+	}
 
 	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *CnfCertificationSuiteRunReconcilerWrapper) SetupWithManager(mgr ctrl.Manager) error {
+func (r *CnfCertificationSuiteRunReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	logrus.Infof("Setting up CnfCertificationSuiteRunReconciler's manager.")
 	certificationRuns = map[CertificationRun]string{}
 

@@ -1,9 +1,4 @@
-package controllerhelper
-
-import (
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-)
+package definitions
 
 const (
 	CnfCertPodNamePrefix = "cnf-job-run"
@@ -18,9 +13,3 @@ const (
 
 	SideCarResultsFolderEnvVar = "TNF_RESULTS_FOLDER"
 )
-
-// CnfCertificationSuiteRunReconciler reconciles a CnfCertificationSuiteRun object
-type CnfCertificationSuiteRunReconciler struct {
-	client.Client
-	Scheme *runtime.Scheme
-}
