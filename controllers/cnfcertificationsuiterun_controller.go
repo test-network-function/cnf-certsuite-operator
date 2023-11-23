@@ -55,6 +55,12 @@ var (
 // +kubebuilder:rbac:groups="*",resources="*",verbs="*"
 // +kubebuilder:rbac:urls="*",verbs="*"
 
+// Updates CnfCertificationSuiteRun.Status.Phase correspomding to a given status
+func (r *CnfCertificationSuiteRunReconciler) updateJobStatus(cnfrun *cnfcertificationsv1alpha1.CnfCertificationSuiteRun, status string) {
+	cnfrun.Status.Phase = status
+	r.Status().Update(context.Background(), cnfrun)
+}
+
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // TODO(user): Modify the Reconcile function to compare the state specified by
@@ -109,13 +115,19 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 		cnfRunPodId, cnfrun.Spec.LabelsFilter, cnfrun.Spec.LogLevel, cnfrun.Spec.TimeOut)
 
 	// Launch the pod with the CNF Cert Suite container plus the sidecar container to fetch the results.
+	r.updateJobStatus(&cnfrun, "CreatingCertSuiteJob")
 	config := cnfcertjob.NewConfig(cnfrun.Spec.LabelsFilter, cnfrun.Spec.LogLevel, cnfrun.Spec.ConfigMapName, cnfrun.Spec.PreflightSecretName)
 	cnfCertJobPod := cnfcertjob.New(config, podName)
+
+	r.updateJobStatus(&cnfrun, "RunningCertSuite")
 	err := r.Create(ctx, cnfCertJobPod)
 	if err != nil {
 		log.Log.Error(err, "Failed to create CNF Cert job")
+		r.updateJobStatus(&cnfrun, "CertSuiteError")
+		return ctrl.Result{}, nil
 	}
 
+	r.updateJobStatus(&cnfrun, "CertSuiteFinished")
 	return ctrl.Result{}, nil
 }
 
