@@ -19,13 +19,18 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	cnfcertificationsv1alpha1 "github.com/greyerof/cnf-certification-operator/api/v1alpha1"
 	"github.com/greyerof/cnf-certification-operator/controllers/cnf-cert-job"
@@ -55,10 +60,68 @@ var (
 // +kubebuilder:rbac:groups="*",resources="*",verbs="*"
 // +kubebuilder:rbac:urls="*",verbs="*"
 
+func ignoreUpdatePredicate() predicate.Predicate {
+	return predicate.Funcs{
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			// Ignore updates to CR
+			return false
+		},
+	}
+}
+
 // Updates CnfCertificationSuiteRun.Status.Phase correspomding to a given status
 func (r *CnfCertificationSuiteRunReconciler) updateJobStatus(cnfrun *cnfcertificationsv1alpha1.CnfCertificationSuiteRun, status string) {
 	cnfrun.Status.Phase = status
 	r.Status().Update(context.Background(), cnfrun)
+}
+
+func (r *CnfCertificationSuiteRunReconciler) waitForCnfCertJobPodToComplete(ctx context.Context, namespace string, cnfCertJobPod *corev1.Pod) {
+	cnfCertJobNamespacedName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      cnfCertJobPod.Name,
+	}
+
+	for {
+		switch cnfCertJobPod.Status.Phase {
+		case corev1.PodSucceeded:
+			logrus.Info("Cnf job pod has completed successfully.")
+			return
+		case corev1.PodFailed:
+			logrus.Info("Cnf job pod has completed with failure.")
+			return
+		default:
+			logrus.Info("Cnf job pod is running. Current status: ", cnfCertJobPod.Status.Phase)
+			time.Sleep(5 * time.Second)
+		}
+		err := r.Get(ctx, cnfCertJobNamespacedName, cnfCertJobPod)
+		if err != nil {
+			logrus.Error("Error found while getting cnf cert job pod: ", err)
+		}
+	}
+}
+
+func (r *CnfCertificationSuiteRunReconciler) getCertSuiteContainerExitStatus(cnfCertJobPod *corev1.Pod) int32 {
+	for _, containerStatus := range cnfCertJobPod.Status.ContainerStatuses {
+		if containerStatus.Name == definitions.CnfCertSuiteContainerName {
+			return containerStatus.State.Terminated.ExitCode
+		}
+	}
+	return -1
+}
+
+func (r *CnfCertificationSuiteRunReconciler) verifyCnfCertSuiteOutput(ctx context.Context, namespace string, cnfCertJobPod *corev1.Pod, cnfrun *cnfcertificationsv1alpha1.CnfCertificationSuiteRun) {
+	r.waitForCnfCertJobPodToComplete(ctx, namespace, cnfCertJobPod)
+
+	// cnf-cert-job has terminated - checking exit status of cert suite
+	certSuiteExitStatus := r.getCertSuiteContainerExitStatus(cnfCertJobPod)
+	if certSuiteExitStatus == 0 {
+		r.updateJobStatus(cnfrun, "CertSuiteFinished")
+		logrus.Info("CNF Cert job has finished running.")
+	} else {
+		r.updateJobStatus(cnfrun, "CertSuiteError")
+		logrus.Info("CNF Cert job encoutered an error. Exit status: ", certSuiteExitStatus)
+	}
+
 }
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -116,18 +179,20 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 
 	// Launch the pod with the CNF Cert Suite container plus the sidecar container to fetch the results.
 	r.updateJobStatus(&cnfrun, "CreatingCertSuiteJob")
+	logrus.Info("Creating CNF Cert job pod")
 	config := cnfcertjob.NewConfig(cnfrun.Spec.LabelsFilter, cnfrun.Spec.LogLevel, cnfrun.Spec.ConfigMapName, cnfrun.Spec.PreflightSecretName)
 	cnfCertJobPod := cnfcertjob.New(config, podName)
 
 	r.updateJobStatus(&cnfrun, "RunningCertSuite")
+	logrus.Info("Runnning CNF Cert job")
 	err := r.Create(ctx, cnfCertJobPod)
 	if err != nil {
-		log.Log.Error(err, "Failed to create CNF Cert job")
-		r.updateJobStatus(&cnfrun, "CertSuiteError")
+		log.Log.Error(err, "Failed to create CNF Cert job pod")
+		r.updateJobStatus(&cnfrun, "FailedToDeployCertSuitePod")
 		return ctrl.Result{}, nil
 	}
 
-	r.updateJobStatus(&cnfrun, "CertSuiteFinished")
+	go r.verifyCnfCertSuiteOutput(ctx, req.NamespacedName.Namespace, cnfCertJobPod, &cnfrun)
 	return ctrl.Result{}, nil
 }
 
@@ -138,5 +203,6 @@ func (r *CnfCertificationSuiteRunReconciler) SetupWithManager(mgr ctrl.Manager) 
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&cnfcertificationsv1alpha1.CnfCertificationSuiteRun{}).
+		WithEventFilter(ignoreUpdatePredicate()).
 		Complete(r)
 }

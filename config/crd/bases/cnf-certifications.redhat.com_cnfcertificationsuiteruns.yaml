@@ -15,7 +15,15 @@ spec:
     singular: cnfcertificationsuiterun
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    - description: CnfCertificationSuiteRun current status
+      jsonPath: .status.phase
+      name: Status
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: CnfCertificationSuiteRun is the Schema for the cnfcertificationsuiteruns

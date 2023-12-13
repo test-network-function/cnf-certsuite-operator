@@ -1,7 +1,9 @@
 package definitions
 
 const (
-	CnfCertPodNamePrefix = "cnf-job-run"
+	CnfCertPodNamePrefix             = "cnf-job-run"
+	CnfCertSuiteSidecarContainerName = "cnf-certsuite-sidecar"
+	CnfCertSuiteContainerName        = "cnf-certsuite"
 
 	CnfCertSuiteBaseFolder      = "/cnf-certsuite"
 	CnfCnfCertSuiteConfigFolder = CnfCertSuiteBaseFolder + "/config/suite"

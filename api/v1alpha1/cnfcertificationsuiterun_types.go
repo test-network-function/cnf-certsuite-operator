@@ -52,6 +52,8 @@ type CnfCertificationSuiteRunStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+//+kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase",description="CnfCertificationSuiteRun current status"
 
 // CnfCertificationSuiteRun is the Schema for the cnfcertificationsuiteruns API
 type CnfCertificationSuiteRun struct {
