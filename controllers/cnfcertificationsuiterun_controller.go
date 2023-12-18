@@ -183,15 +183,15 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 	config := cnfcertjob.NewConfig(cnfrun.Spec.LabelsFilter, cnfrun.Spec.LogLevel, cnfrun.Spec.ConfigMapName, cnfrun.Spec.PreflightSecretName)
 	cnfCertJobPod := cnfcertjob.New(config, podName)
 
-	r.updateJobStatus(&cnfrun, "RunningCertSuite")
-	logrus.Info("Runnning CNF Cert job")
 	err := r.Create(ctx, cnfCertJobPod)
 	if err != nil {
 		log.Log.Error(err, "Failed to create CNF Cert job pod")
 		r.updateJobStatus(&cnfrun, "FailedToDeployCertSuitePod")
 		return ctrl.Result{}, nil
 	}
-
+	r.updateJobStatus(&cnfrun, "RunningCertSuite")
+	logrus.Info("Runnning CNF Cert job")
+	
 	go r.verifyCnfCertSuiteOutput(ctx, req.NamespacedName.Namespace, cnfCertJobPod, &cnfrun)
 	return ctrl.Result{}, nil
 }
