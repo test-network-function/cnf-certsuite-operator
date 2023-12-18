@@ -34,7 +34,7 @@ func New(config *Config, podName string) *corev1.Pod {
 			RestartPolicy:      "Never",
 			Containers: []corev1.Container{
 				{
-					Name:  "cnf-certsuite-sidecar",
+					Name:  definitions.CnfCertSuiteSidecarContainerName,
 					Image: "quay.io/greyerof/cnf-op:sidecarv2",
 					Env: []corev1.EnvVar{
 						{
@@ -60,7 +60,7 @@ func New(config *Config, podName string) *corev1.Pod {
 					},
 				},
 				{
-					Name:    "cnf-certsuite",
+					Name:    definitions.CnfCertSuiteContainerName,
 					Image:   "quay.io/testnetworkfunction/cnf-certification-test:unstable",
 					Command: []string{"./run-cnf-suites.sh"},
 					Args:    []string{"-l", config.LabelsFilter, "-o", definitions.CnfCertSuiteResultsFolder},
