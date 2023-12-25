@@ -34,7 +34,7 @@ type TestCaseResult struct {
 }
 
 // Maps a test suite name to a list of TestCaseResult
-type TestSuiteResults map[string][]TestCaseResult
+type TestSuiteResults map[string]TestCaseResult
 
 type Schema struct {
 	Claim struct {

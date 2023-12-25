@@ -33,7 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	cnfcertificationsv1alpha1 "github.com/greyerof/cnf-certification-operator/api/v1alpha1"
-	"github.com/greyerof/cnf-certification-operator/controllers/cnf-cert-job"
+	cnfcertjob "github.com/greyerof/cnf-certification-operator/controllers/cnf-cert-job"
 	"github.com/greyerof/cnf-certification-operator/controllers/definitions"
 
 	"github.com/sirupsen/logrus"
@@ -180,8 +180,14 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 	// Launch the pod with the CNF Cert Suite container plus the sidecar container to fetch the results.
 	r.updateJobStatus(&cnfrun, "CreatingCertSuiteJob")
 	logrus.Info("Creating CNF Cert job pod")
-	config := cnfcertjob.NewConfig(cnfrun.Spec.LabelsFilter, cnfrun.Spec.LogLevel, cnfrun.Spec.ConfigMapName, cnfrun.Spec.PreflightSecretName)
-	cnfCertJobPod := cnfcertjob.New(config, podName)
+	config := cnfcertjob.NewConfig(
+		podName,
+		req.Namespace,
+		cnfrun.Spec.LabelsFilter,
+		cnfrun.Spec.LogLevel,
+		cnfrun.Spec.ConfigMapName,
+		cnfrun.Spec.PreflightSecretName)
+	cnfCertJobPod := cnfcertjob.New(config)
 
 	err := r.Create(ctx, cnfCertJobPod)
 	if err != nil {
@@ -191,7 +197,7 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 	}
 	r.updateJobStatus(&cnfrun, "RunningCertSuite")
 	logrus.Info("Runnning CNF Cert job")
-	
+
 	go r.verifyCnfCertSuiteOutput(ctx, req.NamespacedName.Namespace, cnfCertJobPod, &cnfrun)
 	return ctrl.Result{}, nil
 }

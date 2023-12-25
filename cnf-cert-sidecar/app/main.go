@@ -19,6 +19,8 @@ import (
 
 const (
 	sideCarResultsFolderEnvVar = "TNF_RESULTS_FOLDER"
+	podNameEnvVar              = "MY_POD_NAME"
+	podNamespaceEnvVar         = "MY_POD_NAMESPACE"
 	claimFileName              = "claim.json"
 )
 
@@ -89,20 +91,16 @@ func main() {
 		}
 
 		results := []cnfcertificationsv1alpha1.TestCaseResult{}
-		for i := range claimContent.Claim.Results {
-			tsResults := claimContent.Claim.Results[i]
-			for j := range tsResults {
-				tcResult := tsResults[j]
-				results = append(results, cnfcertificationsv1alpha1.TestCaseResult{
-					TestCaseName: tcResult.TestID.ID,
-					Result:       tcResult.State,
-				})
-			}
+		for tcName, tcResult := range claimContent.Claim.Results {
+			results = append(results, cnfcertificationsv1alpha1.TestCaseResult{
+				TestCaseName: tcName,
+				Result:       tcResult.State,
+			})
 		}
 
-		reportCrName := fmt.Sprintf("%s-report", os.Getenv("MY_POD_NAME"))
+		reportCrName := fmt.Sprintf("%s-report", os.Getenv(podNameEnvVar))
 		err = k8sClient.Create(context.TODO(), &cnfcertificationsv1alpha1.CnfCertificationSuiteReport{
-			ObjectMeta: metav1.ObjectMeta{Name: reportCrName, Namespace: "cnf-certification-operator"},
+			ObjectMeta: metav1.ObjectMeta{Name: reportCrName, Namespace: os.Getenv(podNamespaceEnvVar)},
 			Spec:       cnfcertificationsv1alpha1.CnfCertificationSuiteReportSpec{Results: results},
 			Status:     cnfcertificationsv1alpha1.CnfCertificationSuiteReportStatus{},
 		})
@@ -112,8 +110,5 @@ func main() {
 
 		logrus.Infof("CnfCertificationSuiteReport created with results:\n%s", results)
 		break
-		// logrus.Infof("CnfCertificationSuiteReport created succesfully. Waiting 60 secs because why not...")
-
-		// time.Sleep(60 * time.Second)
 	}
 }

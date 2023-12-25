@@ -8,14 +8,18 @@ import (
 )
 
 type Config struct {
+	PodName             string
+	Namespace           string
 	LabelsFilter        string
 	LogLevel            string
 	ConfigMapName       string
 	PreflightSecretName string
 }
 
-func NewConfig(labelsFilter, logLevel, configMapName, preflightSecretName string) *Config {
+func NewConfig(podName, namespace, labelsFilter, logLevel, configMapName, preflightSecretName string) *Config {
 	return &Config{
+		PodName:             podName,
+		Namespace:           namespace,
 		LabelsFilter:        labelsFilter,
 		LogLevel:            logLevel,
 		ConfigMapName:       configMapName,
@@ -23,25 +27,34 @@ func NewConfig(labelsFilter, logLevel, configMapName, preflightSecretName string
 	}
 }
 
-func New(config *Config, podName string) *corev1.Pod {
+func New(config *Config) *corev1.Pod {
 	return &corev1.Pod{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      podName,
-			Namespace: "cnf-certification-operator"},
+			Name:      config.PodName,
+			Namespace: config.Namespace,
+		},
 		Spec: corev1.PodSpec{
 			ServiceAccountName: "cnf-certification-operator-controller-manager",
 			RestartPolicy:      "Never",
 			Containers: []corev1.Container{
 				{
 					Name:  definitions.CnfCertSuiteSidecarContainerName,
-					Image: "quay.io/greyerof/cnf-op:sidecarv2",
+					Image: "quay.io/greyerof/cnf-op:sidecarv3",
 					Env: []corev1.EnvVar{
 						{
 							Name: "MY_POD_NAME",
 							ValueFrom: &corev1.EnvVarSource{
 								FieldRef: &corev1.ObjectFieldSelector{
 									FieldPath: "metadata.name",
+								},
+							},
+						},
+						{
+							Name: "MY_POD_NAMESPACE",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "metadata.namespace",
 								},
 							},
 						},
