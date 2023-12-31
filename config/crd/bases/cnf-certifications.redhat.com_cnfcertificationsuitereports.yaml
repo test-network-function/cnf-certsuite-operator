@@ -37,11 +37,121 @@ spec:
             description: CnfCertificationSuiteReportSpec defines the desired state
               of CnfCertificationSuiteReport
             properties:
+              certSuiteConfigRunName:
+                type: string
+              cnf:
+                properties:
+                  crds:
+                    items:
+                      type: string
+                    type: array
+                  csv:
+                    items:
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                      type: object
+                    type: array
+                  deployments:
+                    items:
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                      type: object
+                    type: array
+                  helmChartReleases:
+                    items:
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                      type: object
+                    type: array
+                  namespaces:
+                    items:
+                      type: string
+                    type: array
+                  nodes:
+                    items:
+                      type: string
+                    type: array
+                  pods:
+                    items:
+                      properties:
+                        containers:
+                          items:
+                            type: string
+                          type: array
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                      type: object
+                    type: array
+                  services:
+                    items:
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                      type: object
+                    type: array
+                  statefulSets:
+                    items:
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                      type: object
+                    type: array
+                type: object
+              cnfCertSuiteVersion:
+                type: string
+              ocpVersion:
+                type: string
+            required:
+            - certSuiteConfigRunName
+            - cnfCertSuiteVersion
+            - ocpVersion
+            type: object
+          status:
+            description: CnfCertificationSuiteReportStatus defines the observed state
+              of CnfCertificationSuiteReport
+            properties:
+              Summary:
+                properties:
+                  errored:
+                    type: integer
+                  failed:
+                    type: integer
+                  passed:
+                    type: integer
+                  skipped:
+                    type: integer
+                  total:
+                    type: integer
+                required:
+                - errored
+                - failed
+                - passed
+                - skipped
+                - total
+                type: object
               results:
-                description: Results holds the result of each test case
                 items:
                   description: TestCaseResult holds a test case result
                   properties:
+                    logs:
+                      type: string
+                    reason:
+                      type: string
                     result:
                       type: string
                     testCaseName:
@@ -51,12 +161,13 @@ spec:
                   - testCaseName
                   type: object
                 type: array
+              verdict:
+                description: Results holds the result of each test case
+                type: string
             required:
+            - Summary
             - results
-            type: object
-          status:
-            description: CnfCertificationSuiteReportStatus defines the observed state
-              of CnfCertificationSuiteReport
+            - verdict
             type: object
         type: object
     served: true

@@ -3,14 +3,13 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"os"
 	"time"
 
 	cnfcertificationsv1alpha1 "github.com/greyerof/cnf-certification-operator/api/v1alpha1"
 	"github.com/greyerof/cnf-certification-operator/cnf-cert-sidecar/app/claim"
+	cnfcertsuitereport "github.com/greyerof/cnf-certification-operator/cnf-cert-sidecar/app/cnf-cert-suite-report"
 	"github.com/sirupsen/logrus"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd"
@@ -19,8 +18,6 @@ import (
 
 const (
 	sideCarResultsFolderEnvVar = "TNF_RESULTS_FOLDER"
-	podNameEnvVar              = "MY_POD_NAME"
-	podNamespaceEnvVar         = "MY_POD_NAMESPACE"
 	claimFileName              = "claim.json"
 )
 
@@ -90,25 +87,21 @@ func main() {
 			logrus.Fatalf("Failed to unmarshal claim json: %v", err)
 		}
 
-		results := []cnfcertificationsv1alpha1.TestCaseResult{}
-		for tcName, tcResult := range claimContent.Claim.Results {
-			results = append(results, cnfcertificationsv1alpha1.TestCaseResult{
-				TestCaseName: tcName,
-				Result:       tcResult.State,
-			})
-		}
-
-		reportCrName := fmt.Sprintf("%s-report", os.Getenv(podNameEnvVar))
-		err = k8sClient.Create(context.TODO(), &cnfcertificationsv1alpha1.CnfCertificationSuiteReport{
-			ObjectMeta: metav1.ObjectMeta{Name: reportCrName, Namespace: os.Getenv(podNamespaceEnvVar)},
-			Spec:       cnfcertificationsv1alpha1.CnfCertificationSuiteReportSpec{Results: results},
-			Status:     cnfcertificationsv1alpha1.CnfCertificationSuiteReportStatus{},
-		})
+		// Create cnfCertSuiteReport
+		config := cnfcertsuitereport.NewConfig(&claimContent)
+		cnfCertSuiteReport := cnfcertsuitereport.New(config)
+		err = k8sClient.Create(context.TODO(), cnfCertSuiteReport)
 		if err != nil {
 			logrus.Fatalf("Failed to create CnfCertificationSuiteReport object in ns cnf-certification-operator: %v", err)
 		}
 
-		logrus.Infof("CnfCertificationSuiteReport created with results:\n%s", results)
+		cnfcertsuitereport.UpdateStatus(cnfCertSuiteReport, &claimContent.Claim.Results)
+		err = k8sClient.Status().Update(context.TODO(), cnfCertSuiteReport)
+		if err != nil {
+			logrus.Fatalf("Failed to update CnfCertificationSuiteReport.Status object object in ns cnf-certification-operator: %v", err)
+		}
+
+		logrus.Infof("CnfCertificationSuiteReport created with results:\n%s", cnfCertSuiteReport.Status.Results)
 		break
 	}
 }
