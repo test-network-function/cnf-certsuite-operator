@@ -78,6 +78,10 @@ spec:
                 description: Phase holds the current phase of the CNF Certification
                   Suite run.
                 type: string
+              reportName:
+                description: Report Name of the CnfCertificationSuiteReport that has
+                  been created.
+                type: string
             required:
             - phase
             type: object

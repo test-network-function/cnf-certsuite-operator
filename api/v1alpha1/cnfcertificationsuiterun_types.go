@@ -48,6 +48,8 @@ type CnfCertificationSuiteRunStatus struct {
 
 	// Phase holds the current phase of the CNF Certification Suite run.
 	Phase string `json:"phase"`
+	// Report Name of the CnfCertificationSuiteReport that has been created.
+	ReportName string `json:"reportName,omitempty"`
 }
 
 //+kubebuilder:object:root=true
