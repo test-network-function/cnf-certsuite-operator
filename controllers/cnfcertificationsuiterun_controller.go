@@ -72,7 +72,10 @@ func ignoreUpdatePredicate() predicate.Predicate {
 // Updates CnfCertificationSuiteRun.Status.Phase correspomding to a given status
 func (r *CnfCertificationSuiteRunReconciler) updateJobStatus(cnfrun *cnfcertificationsv1alpha1.CnfCertificationSuiteRun, status string) {
 	cnfrun.Status.Phase = status
-	r.Status().Update(context.Background(), cnfrun)
+	err := r.Status().Update(context.Background(), cnfrun)
+	if err != nil {
+		logrus.Errorf("Error found while updating CnfCertificationSuiteRun's status: %s", err)
+	}
 }
 
 func (r *CnfCertificationSuiteRunReconciler) waitForCnfCertJobPodToComplete(ctx context.Context, namespace string, cnfCertJobPod *corev1.Pod) {

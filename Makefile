@@ -63,7 +63,7 @@ endif
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
-.PHONY: all
+.PHONY: all clean
 all: build
 
 ##@ General
