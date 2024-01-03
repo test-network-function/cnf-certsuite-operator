@@ -52,6 +52,7 @@ type TestCaseResult struct {
 	FailureLineContent     string            `json:"failureLineContent"`
 	FailureLocation        string            `json:"failureLocation"`
 	FailureReason          string            `json:"failureReason"`
+	SkipReason             string            `json:"skipReason"`
 	StartTime              string            `json:"startTime"`
 	State                  string            `json:"state"`
 	TestID                 struct {

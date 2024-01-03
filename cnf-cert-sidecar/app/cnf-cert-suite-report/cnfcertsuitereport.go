@@ -120,13 +120,16 @@ func UpdateStatus(cnfCertSuiteReport *cnfcertificationsv1alpha1.CnfCertification
 	results := []cnfcertificationsv1alpha1.TestCaseResult{}
 	totalTests, passedTests, skippedTests, failedTests, erroredTests := 0, 0, 0, 0, 0
 	for tcName, tcResult := range *testSuiteResults {
+		reason := ""
 		switch tcResult.State {
 		case "passed":
 			passedTests++
 		case "skipped":
 			skippedTests++
+			reason = tcResult.SkipReason
 		case "failed":
 			failedTests++
+			reason = tcResult.FailureReason
 		case "error":
 			erroredTests++
 		}
@@ -134,7 +137,7 @@ func UpdateStatus(cnfCertSuiteReport *cnfcertificationsv1alpha1.CnfCertification
 		results = append(results, cnfcertificationsv1alpha1.TestCaseResult{
 			TestCaseName: tcName,
 			Result:       tcResult.State,
-			Reason:       tcResult.FailureReason,
+			Reason:       reason,
 			Logs:         tcResult.CapturedTestOutput,
 		})
 	}
