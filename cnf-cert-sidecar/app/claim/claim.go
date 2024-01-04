@@ -29,9 +29,9 @@ type TestSuiteConfiguration struct {
 	Deployments       []Resource   `json:"testDeployments,omitempty"`
 	StatefulSets      []Resource   `json:"testStatefulSets,omitempty"`
 	Csvs              []Metadata   `json:"AllOperators,omitempty"`
-	Crds              []Resource   `json:"crds,omitempty"`
-	Services          []Resource   `json:"services,omitempty"`
-	HelmChartReleases []Resource   `json:"helmChartReleases,omitempty"`
+	Crds              []Resource   `json:"testCrds,omitempty"`
+	Services          []Resource   `json:"testServices,omitempty"`
+	HelmChartReleases []Resource   `json:"testHelmChartReleases,omitempty"`
 }
 
 type TestSuiteNodes struct {

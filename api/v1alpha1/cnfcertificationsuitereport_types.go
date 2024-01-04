@@ -40,7 +40,7 @@ type Cnf struct {
 	Pods              []CnfPod      `json:"pods,omitempty"`
 	Deployments       []CnfResource `json:"deployments,omitempty"`
 	StatefulSets      []CnfResource `json:"statefulSets,omitempty"`
-	Csvs              []CnfResource `json:"csv,omitempty"`
+	Csvs              []CnfResource `json:"csvs,omitempty"`
 	Crds              []string      `json:"crds,omitempty"`
 	Services          []CnfResource `json:"services,omitempty"`
 	HelmChartReleases []CnfResource `json:"helmChartReleases,omitempty"`
@@ -80,7 +80,7 @@ type CnfCertificationSuiteReportStatus struct {
 
 	// Results holds the result of each test case
 	Verdict string                                   `json:"verdict"`
-	Summary CnfCertificationSuiteReportStatusSummary `json:"Summary"`
+	Summary CnfCertificationSuiteReportStatusSummary `json:"summary"`
 	Results []TestCaseResult                         `json:"results"`
 }
 

@@ -25,12 +25,12 @@ type Config struct {
 	Cnf                    cnfcertificationsv1alpha1.Cnf
 }
 
-func addNamespacesToCnfSpecField(cnf *cnfcertificationsv1alpha1.Cnf, namespaces *[]string) {
-	cnf.Namespaces = append(cnf.Namespaces, *namespaces...)
+func addNamespacesToCnfSpecField(cnf *cnfcertificationsv1alpha1.Cnf, namespaces []string) {
+	cnf.Namespaces = append(cnf.Namespaces, namespaces...)
 }
 
-func addPodsToCnfSpecField(cnf *cnfcertificationsv1alpha1.Cnf, pods *[]corev1.Pod) {
-	for _, pod := range *pods {
+func addPodsToCnfSpecField(cnf *cnfcertificationsv1alpha1.Cnf, pods []corev1.Pod) {
+	for _, pod := range pods {
 		var containers []string
 		for _, container := range pod.Spec.Containers {
 			containers = append(containers, container.Name)
@@ -43,30 +43,30 @@ func addPodsToCnfSpecField(cnf *cnfcertificationsv1alpha1.Cnf, pods *[]corev1.Po
 	}
 }
 
-func addOperatorsToCnfSpecField(cnf *cnfcertificationsv1alpha1.Cnf, csvs *[]claim.Metadata) {
-	for _, csv := range *csvs {
-		cnf.Deployments = append(cnf.Deployments, cnfcertificationsv1alpha1.CnfResource{
+func addOperatorsToCnfSpecField(cnf *cnfcertificationsv1alpha1.Cnf, csvs []claim.Metadata) {
+	for _, csv := range csvs {
+		cnf.Csvs = append(cnf.Csvs, cnfcertificationsv1alpha1.CnfResource{
 			Name:      csv.Name,
 			Namespace: csv.Namespace,
 		})
 	}
 }
 
-func addCrdsToCnfSpecField(cnf *cnfcertificationsv1alpha1.Cnf, crds *[]claim.Resource) {
-	for _, crd := range *crds {
+func addCrdsToCnfSpecField(cnf *cnfcertificationsv1alpha1.Cnf, crds []claim.Resource) {
+	for _, crd := range crds {
 		cnf.Crds = append(cnf.Crds, crd.Metadata.Name)
 	}
 }
 
-func addNodesToCnfSpecField(cnf *cnfcertificationsv1alpha1.Cnf, nodes *map[string]interface{}) {
-	for nodeName := range *nodes {
+func addNodesToCnfSpecField(cnf *cnfcertificationsv1alpha1.Cnf, nodes map[string]interface{}) {
+	for nodeName := range nodes {
 		cnf.Nodes = append(cnf.Nodes, nodeName)
 	}
 }
 
-func addResourcesToCnfSpecField(cnf *cnfcertificationsv1alpha1.Cnf, resources *[]claim.Resource) {
-	for _, resource := range *resources {
-		cnf.Deployments = append(cnf.Deployments, cnfcertificationsv1alpha1.CnfResource{
+func addResourcesToCnfSpecField(cnfResourceField *[]cnfcertificationsv1alpha1.CnfResource, resources []claim.Resource){
+	for _, resource := range resources {
+		*cnfResourceField = append(*cnfResourceField, cnfcertificationsv1alpha1.CnfResource{
 			Name:      resource.Metadata.Name,
 			Namespace: resource.Metadata.Namespace,
 		})
@@ -75,15 +75,15 @@ func addResourcesToCnfSpecField(cnf *cnfcertificationsv1alpha1.Cnf, resources *[
 
 func newCnfSpecField(claimcontent *claim.Schema) *cnfcertificationsv1alpha1.Cnf {
 	var cnf cnfcertificationsv1alpha1.Cnf
-	addNamespacesToCnfSpecField(&cnf, &claimcontent.Claim.Configurations.NameSpaces)
-	addNodesToCnfSpecField(&cnf, &claimcontent.Claim.Nodes.NodeSummary)
-	addPodsToCnfSpecField(&cnf, &claimcontent.Claim.Configurations.Pods)
-	addResourcesToCnfSpecField(&cnf, &claimcontent.Claim.Configurations.Deployments)
-	addResourcesToCnfSpecField(&cnf, &claimcontent.Claim.Configurations.StatefulSets)
-	addOperatorsToCnfSpecField(&cnf, &claimcontent.Claim.Configurations.Csvs)
-	addCrdsToCnfSpecField(&cnf, &claimcontent.Claim.Configurations.Crds)
-	addResourcesToCnfSpecField(&cnf, &claimcontent.Claim.Configurations.Services)
-	addResourcesToCnfSpecField(&cnf, &claimcontent.Claim.Configurations.HelmChartReleases)
+	addNamespacesToCnfSpecField(&cnf, claimcontent.Claim.Configurations.NameSpaces)
+	addNodesToCnfSpecField(&cnf, claimcontent.Claim.Nodes.NodeSummary)
+	addPodsToCnfSpecField(&cnf, claimcontent.Claim.Configurations.Pods)
+	addResourcesToCnfSpecField(&cnf.Deployments, claimcontent.Claim.Configurations.Deployments)
+	addResourcesToCnfSpecField(&cnf.StatefulSets, claimcontent.Claim.Configurations.StatefulSets)
+	addOperatorsToCnfSpecField(&cnf, claimcontent.Claim.Configurations.Csvs)
+	addCrdsToCnfSpecField(&cnf, claimcontent.Claim.Configurations.Crds)
+	addResourcesToCnfSpecField(&cnf.Services, claimcontent.Claim.Configurations.Services)
+	addResourcesToCnfSpecField(&cnf.HelmChartReleases, claimcontent.Claim.Configurations.HelmChartReleases)
 	return &cnf
 }
 
@@ -150,13 +150,14 @@ func UpdateStatus(cnfCertSuiteReport *cnfcertificationsv1alpha1.CnfCertification
 		Errored: erroredTests,
 	}
 
-	if erroredTests >= 1 { // at least one test encountered an error
+	switch {
+	case erroredTests >= 1: // at least one test encountered an error
 		cnfCertSuiteReport.Status.Verdict = "error"
-	} else if failedTests >= 1 { // at least one failed test
+	case failedTests >= 1: // at least one failed test
 		cnfCertSuiteReport.Status.Verdict = "fail"
-	} else if skippedTests == totalTests { // all tests were skipped
+	case skippedTests == totalTests: // all tests were skipped
 		cnfCertSuiteReport.Status.Verdict = "skip"
-	} else { // all tests who ran have passed
+	default: // all tests who ran have passed
 		cnfCertSuiteReport.Status.Verdict = "pass"
 	}
 }
