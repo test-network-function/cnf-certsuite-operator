@@ -78,7 +78,6 @@ type CnfCertificationSuiteReportStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Results holds the result of each test case
 	Verdict string                                   `json:"verdict"`
 	Summary CnfCertificationSuiteReportStatusSummary `json:"summary"`
 	Results []TestCaseResult                         `json:"results"`

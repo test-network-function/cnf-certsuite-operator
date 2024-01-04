@@ -162,7 +162,6 @@ spec:
                 - total
                 type: object
               verdict:
-                description: Results holds the result of each test case
                 type: string
             required:
             - results
