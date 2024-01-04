@@ -65,7 +65,7 @@ func New(config *Config) *corev1.Pod {
 							Value: definitions.CnfCertSuiteResultsFolder,
 						},
 						{
-							Name:  "CNF_RUN_NAME",
+							Name:  "RUN_CR_NAME",
 							Value: config.CertSuiteConfigRunName,
 						},
 					},

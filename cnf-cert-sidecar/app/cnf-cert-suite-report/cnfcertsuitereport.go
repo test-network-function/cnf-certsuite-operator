@@ -14,7 +14,7 @@ import (
 const (
 	podNameEnvVar      = "MY_POD_NAME"
 	podNamespaceEnvVar = "MY_POD_NAMESPACE"
-	cnfRunNameEnvVar   = "CNF_RUN_NAME"
+	runCrNameEnvVar   = "RUN_CR_NAME"
 )
 
 type Config struct {
@@ -95,7 +95,7 @@ func NewConfig(claimContent *claim.Schema) *Config {
 	return &Config{
 		ReportCrName:           reportCrName,
 		Namespace:              os.Getenv(podNamespaceEnvVar),
-		CertSuiteConfigRunName: os.Getenv(cnfRunNameEnvVar),
+		CertSuiteConfigRunName: os.Getenv(runCrNameEnvVar),
 		OcpVersion:             claimContent.Claim.Versions.Ocp,
 		CnfCertSuiteVersion:    claimContent.Claim.Versions.Tnf,
 		Cnf:                    *cnf,
