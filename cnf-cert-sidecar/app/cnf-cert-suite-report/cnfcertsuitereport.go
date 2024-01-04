@@ -14,6 +14,7 @@ import (
 const (
 	podNameEnvVar      = "MY_POD_NAME"
 	podNamespaceEnvVar = "MY_POD_NAMESPACE"
+	cnfRunNameEnvVar   = "CNF_RUN_NAME"
 )
 
 type Config struct {
@@ -64,7 +65,7 @@ func addNodesToCnfSpecField(cnf *cnfcertificationsv1alpha1.Cnf, nodes map[string
 	}
 }
 
-func addResourcesToCnfSpecField(cnfResourceField *[]cnfcertificationsv1alpha1.CnfResource, resources []claim.Resource){
+func addResourcesToCnfSpecField(cnfResourceField *[]cnfcertificationsv1alpha1.CnfResource, resources []claim.Resource) {
 	for _, resource := range resources {
 		*cnfResourceField = append(*cnfResourceField, cnfcertificationsv1alpha1.CnfResource{
 			Name:      resource.Metadata.Name,
@@ -88,14 +89,13 @@ func newCnfSpecField(claimcontent *claim.Schema) *cnfcertificationsv1alpha1.Cnf 
 }
 
 func NewConfig(claimContent *claim.Schema) *Config {
-	certSuiteConfigRunName := os.Getenv(podNameEnvVar)
-	reportCrName := fmt.Sprintf("%s-report", certSuiteConfigRunName)
+	reportCrName := fmt.Sprintf("%s-report", os.Getenv(podNameEnvVar))
 	cnf := newCnfSpecField(claimContent)
 
 	return &Config{
 		ReportCrName:           reportCrName,
 		Namespace:              os.Getenv(podNamespaceEnvVar),
-		CertSuiteConfigRunName: certSuiteConfigRunName,
+		CertSuiteConfigRunName: os.Getenv(cnfRunNameEnvVar),
 		OcpVersion:             claimContent.Claim.Versions.Ocp,
 		CnfCertSuiteVersion:    claimContent.Claim.Versions.Tnf,
 		Cnf:                    *cnf,

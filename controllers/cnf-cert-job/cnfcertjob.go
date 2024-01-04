@@ -8,22 +8,24 @@ import (
 )
 
 type Config struct {
-	PodName             string
-	Namespace           string
-	LabelsFilter        string
-	LogLevel            string
-	ConfigMapName       string
-	PreflightSecretName string
+	PodName                string
+	Namespace              string
+	CertSuiteConfigRunName string
+	LabelsFilter           string
+	LogLevel               string
+	ConfigMapName          string
+	PreflightSecretName    string
 }
 
-func NewConfig(podName, namespace, labelsFilter, logLevel, configMapName, preflightSecretName string) *Config {
+func NewConfig(podName, namespace, certSuiteConfigRunName, labelsFilter, logLevel, configMapName, preflightSecretName string) *Config {
 	return &Config{
-		PodName:             podName,
-		Namespace:           namespace,
-		LabelsFilter:        labelsFilter,
-		LogLevel:            logLevel,
-		ConfigMapName:       configMapName,
-		PreflightSecretName: preflightSecretName,
+		PodName:                podName,
+		Namespace:              namespace,
+		CertSuiteConfigRunName: certSuiteConfigRunName,
+		LabelsFilter:           labelsFilter,
+		LogLevel:               logLevel,
+		ConfigMapName:          configMapName,
+		PreflightSecretName:    preflightSecretName,
 	}
 }
 
@@ -40,7 +42,7 @@ func New(config *Config) *corev1.Pod {
 			Containers: []corev1.Container{
 				{
 					Name:  definitions.CnfCertSuiteSidecarContainerName,
-					Image: "quay.io/greyerof/cnf-op:sidecarv3",
+					Image: "quay.io/rh_ee_shmoran/tnf-op:sidecarv4",
 					Env: []corev1.EnvVar{
 						{
 							Name: "MY_POD_NAME",
@@ -61,6 +63,10 @@ func New(config *Config) *corev1.Pod {
 						{
 							Name:  definitions.SideCarResultsFolderEnvVar,
 							Value: definitions.CnfCertSuiteResultsFolder,
+						},
+						{
+							Name:  "CNF_RUN_NAME",
+							Value: config.CertSuiteConfigRunName,
 						},
 					},
 					ImagePullPolicy: "Always",

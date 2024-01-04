@@ -183,6 +183,7 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 	config := cnfcertjob.NewConfig(
 		podName,
 		req.Namespace,
+		cnfrun.Name,
 		cnfrun.Spec.LabelsFilter,
 		cnfrun.Spec.LogLevel,
 		cnfrun.Spec.ConfigMapName,
