@@ -1,0 +1,4 @@
+resources:
+- cnf_certsuite_role.yaml
+- cnf_certsuite_rolebinding.yaml
+- cnf_certsuite_service_account.yaml

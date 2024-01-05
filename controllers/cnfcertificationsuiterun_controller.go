@@ -59,8 +59,15 @@ var (
 
 const multiplier = 5
 
-// +kubebuilder:rbac:groups="*",resources="*",verbs="*"
-// +kubebuilder:rbac:urls="*",verbs="*"
+// +kubebuilder:rbac:groups=cnf-certifications.redhat.com,namespace=cnf-certification-operator,resources=cnfcertificationsuiteruns,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=cnf-certifications.redhat.com,namespace=cnf-certification-operator,resources=cnfcertificationsuiteruns/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=cnf-certifications.redhat.com,namespace=cnf-certification-operator,resources=cnfcertificationsuiteruns/finalizers,verbs=update
+
+// +kubebuilder:rbac:groups=cnf-certifications.redhat.com,namespace=cnf-certification-operator,resources=cnfcertificationsuitereports,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=cnf-certifications.redhat.com,namespace=cnf-certification-operator,resources=cnfcertificationsuitereports/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=cnf-certifications.redhat.com,namespace=cnf-certification-operator,resources=cnfcertificationsuitereports/finalizers,verbs=update
+
+// +kubebuilder:rbac:groups="",namespace=cnf-certification-operator,resources=pods,verbs=get;list;watch;create;update;patch;delete
 
 func ignoreUpdatePredicate() predicate.Predicate {
 	return predicate.Funcs{

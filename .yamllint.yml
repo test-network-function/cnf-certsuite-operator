@@ -12,3 +12,4 @@ rules:
 no_warnings: true
 ignore:
   - config
+  - bundle

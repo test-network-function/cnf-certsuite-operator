@@ -1,0 +1,54 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+  name: tnf-op.v0.0.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: CnfCertificationSuiteReport is the Schema for the cnfcertificationsuitereports
+        API
+      displayName: Cnf Certification Suite Report
+      kind: CnfCertificationSuiteReport
+      name: cnfcertificationsuitereports.cnf-certifications.redhat.com
+      version: v1alpha1
+    - description: CnfCertificationSuiteRun is the Schema for the cnfcertificationsuiteruns
+        API
+      displayName: Cnf Certification Suite Run
+      kind: CnfCertificationSuiteRun
+      name: cnfcertificationsuiteruns.cnf-certifications.redhat.com
+      version: v1alpha1
+  description: CNF Certification Suite Operator
+  displayName: CNF Op
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      deployments: null
+    strategy: ""
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - redhat
+  - certification
+  - cnf
+  - openshift
+  links:
+  - name: Tnf Op
+    url: https://tnf-op.domain
+  maturity: alpha
+  provider:
+    name: RedHat
+  version: 0.0.0
