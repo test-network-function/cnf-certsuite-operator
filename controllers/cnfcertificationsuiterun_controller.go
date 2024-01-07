@@ -71,7 +71,7 @@ func ignoreUpdatePredicate() predicate.Predicate {
 	}
 }
 
-// Updates CnfCertificationSuiteRun.Status.Phase correspomding to a given status
+// Updates CnfCertificationSuiteRun.Status.Phase corresponding to a given status
 func (r *CnfCertificationSuiteRunReconciler) updateJobStatus(cnfrun *cnfcertificationsv1alpha1.CnfCertificationSuiteRun, status string) {
 	cnfrun.Status.Phase = status
 	err := r.Status().Update(context.Background(), cnfrun)
@@ -125,7 +125,7 @@ func (r *CnfCertificationSuiteRunReconciler) verifyCnfCertSuiteOutput(ctx contex
 		logrus.Info("CNF Cert job has finished running.")
 	} else {
 		r.updateJobStatus(cnfrun, "CertSuiteError")
-		logrus.Info("CNF Cert job encoutered an error. Exit status: ", certSuiteExitStatus)
+		logrus.Info("CNF Cert job encountered an error. Exit status: ", certSuiteExitStatus)
 	}
 }
 
@@ -194,7 +194,7 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 		return ctrl.Result{}, nil
 	}
 	r.updateJobStatus(&cnfrun, "RunningCertSuite")
-	logrus.Info("Runnning CNF Cert job")
+	logrus.Info("Running CNF Cert job")
 	go r.verifyCnfCertSuiteOutput(ctx, req.NamespacedName.Namespace, cnfCertJobPod, &cnfrun)
 	return ctrl.Result{}, nil
 }
