@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/greyerof/cnf-certification-operator/api/v1alpha1"
 	cnfcertificationsv1alpha1 "github.com/greyerof/cnf-certification-operator/api/v1alpha1"
 	"github.com/greyerof/cnf-certification-operator/cnf-cert-sidecar/app/claim"
 	corev1 "k8s.io/api/core/v1"
@@ -14,7 +13,7 @@ import (
 const (
 	podNameEnvVar      = "MY_POD_NAME"
 	podNamespaceEnvVar = "MY_POD_NAMESPACE"
-	runCrNameEnvVar   = "RUN_CR_NAME"
+	runCrNameEnvVar    = "RUN_CR_NAME"
 )
 
 type Config struct {
@@ -31,10 +30,12 @@ func addNamespacesToCnfSpecField(cnf *cnfcertificationsv1alpha1.Cnf, namespaces 
 }
 
 func addPodsToCnfSpecField(cnf *cnfcertificationsv1alpha1.Cnf, pods []corev1.Pod) {
-	for _, pod := range pods {
+	for podIdx := 0; podIdx < len(pods); podIdx++ {
+		pod := &pods[podIdx]
+		podsContainers := &pod.Spec.Containers
 		var containers []string
-		for _, container := range pod.Spec.Containers {
-			containers = append(containers, container.Name)
+		for containerIdx := 0; containerIdx < len(*podsContainers); containerIdx++ {
+			containers = append(containers, (*podsContainers)[containerIdx].Name)
 		}
 		cnf.Pods = append(cnf.Pods, cnfcertificationsv1alpha1.CnfPod{
 			Name:       pod.Name,
@@ -119,7 +120,8 @@ func UpdateStatus(cnfCertSuiteReport *cnfcertificationsv1alpha1.CnfCertification
 	testSuiteResults *claim.TestSuiteResults) {
 	results := []cnfcertificationsv1alpha1.TestCaseResult{}
 	totalTests, passedTests, skippedTests, failedTests, erroredTests := 0, 0, 0, 0, 0
-	for tcName, tcResult := range *testSuiteResults {
+	for tcName := range *testSuiteResults {
+		tcResult := (*testSuiteResults)[tcName]
 		reason := ""
 		switch tcResult.State {
 		case "passed":
@@ -130,7 +132,7 @@ func UpdateStatus(cnfCertSuiteReport *cnfcertificationsv1alpha1.CnfCertification
 		case "failed":
 			failedTests++
 			reason = tcResult.FailureReason
-		case "error":
+		case "error": //nolint:goconst
 			erroredTests++
 		}
 		totalTests++
@@ -142,7 +144,7 @@ func UpdateStatus(cnfCertSuiteReport *cnfcertificationsv1alpha1.CnfCertification
 		})
 	}
 	cnfCertSuiteReport.Status.Results = results
-	cnfCertSuiteReport.Status.Summary = v1alpha1.CnfCertificationSuiteReportStatusSummary{
+	cnfCertSuiteReport.Status.Summary = cnfcertificationsv1alpha1.CnfCertificationSuiteReportStatusSummary{
 		Total:   totalTests,
 		Passed:  passedTests,
 		Skipped: skippedTests,

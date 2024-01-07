@@ -54,8 +54,10 @@ var (
 	// certificationRuns maps a certificationRun to a pod name
 	certificationRuns map[certificationRun]string
 	// Holds an autoincremental CNF Cert Suite pod id
-	cnfRunPodId int
+	cnfRunPodID int
 )
+
+const multiplier = 5
 
 // +kubebuilder:rbac:groups="*",resources="*",verbs="*"
 // +kubebuilder:rbac:urls="*",verbs="*"
@@ -94,7 +96,7 @@ func (r *CnfCertificationSuiteRunReconciler) waitForCnfCertJobPodToComplete(ctx 
 			return
 		default:
 			logrus.Info("Cnf job pod is running. Current status: ", cnfCertJobPod.Status.Phase)
-			time.Sleep(5 * time.Second)
+			time.Sleep(multiplier * time.Second)
 		}
 		err := r.Get(ctx, cnfCertJobNamespacedName, cnfCertJobPod)
 		if err != nil {
@@ -104,7 +106,8 @@ func (r *CnfCertificationSuiteRunReconciler) waitForCnfCertJobPodToComplete(ctx 
 }
 
 func (r *CnfCertificationSuiteRunReconciler) getCertSuiteContainerExitStatus(cnfCertJobPod *corev1.Pod) int32 {
-	for _, containerStatus := range cnfCertJobPod.Status.ContainerStatuses {
+	for i := range cnfCertJobPod.Status.ContainerStatuses {
+		containerStatus := &cnfCertJobPod.Status.ContainerStatuses[i]
 		if containerStatus.Name == definitions.CnfCertSuiteContainerName {
 			return containerStatus.State.Terminated.ExitCode
 		}
@@ -124,7 +127,6 @@ func (r *CnfCertificationSuiteRunReconciler) verifyCnfCertSuiteOutput(ctx contex
 		r.updateJobStatus(cnfrun, "CertSuiteError")
 		logrus.Info("CNF Cert job encoutered an error. Exit status: ", certSuiteExitStatus)
 	}
-
 }
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -138,30 +140,22 @@ func (r *CnfCertificationSuiteRunReconciler) verifyCnfCertSuiteOutput(ctx contex
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
 func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
-
 	logrus.Infof("Reconciling CnfCertificationSuiteRun CRD.")
 
-	reqCertificationRun := certificationRun{
-		name:      req.Name,
-		namespace: req.Namespace,
-	}
+	reqCertificationRun := certificationRun{name: req.Name, namespace: req.Namespace}
 
 	var cnfrun cnfcertificationsv1alpha1.CnfCertificationSuiteRun
-	if err := r.Get(ctx, req.NamespacedName, &cnfrun); err != nil {
+	if getErr := r.Get(ctx, req.NamespacedName, &cnfrun); getErr != nil {
 		logrus.Infof("CnfCertificationSuiteRun CR %s (ns %s) not found.", req.Name, req.NamespacedName)
-
 		if podName, exist := certificationRuns[reqCertificationRun]; exist {
 			logrus.Infof("CnfCertificationSuiteRun has been deleted. Removing the associated CNF Cert job pod %v", podName)
-
-			err := r.Delete(context.TODO(), &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: podName, Namespace: req.Namespace}})
-			if err != nil {
-				logrus.Errorf("Failed to remove CNF Cert Job pod %s in namespace %s: %v", req.Name, req.Namespace, err)
+			deleteErr := r.Delete(context.TODO(), &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: podName, Namespace: req.Namespace}})
+			if deleteErr != nil {
+				logrus.Errorf("Failed to remove CNF Cert Job pod %s in namespace %s: %v", req.Name, req.Namespace, deleteErr)
 			}
-
 			delete(certificationRuns, reqCertificationRun)
 		}
-
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return ctrl.Result{}, client.IgnoreNotFound(getErr)
 	}
 
 	if podName, exist := certificationRuns[reqCertificationRun]; exist {
@@ -171,14 +165,14 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 
 	logrus.Infof("New CNF Certification Job run requested: %v", reqCertificationRun)
 
-	cnfRunPodId++
-	podName := fmt.Sprintf("%s-%d", definitions.CnfCertPodNamePrefix, cnfRunPodId)
+	cnfRunPodID++
+	podName := fmt.Sprintf("%s-%d", definitions.CnfCertPodNamePrefix, cnfRunPodID)
 
 	// Store the new run & associated CNF Cert pod name
 	certificationRuns[reqCertificationRun] = podName
 
 	logrus.Infof("Running CNF Certification Suite container (job id=%d) with labels %q, log level %q and timeout: %q",
-		cnfRunPodId, cnfrun.Spec.LabelsFilter, cnfrun.Spec.LogLevel, cnfrun.Spec.TimeOut)
+		cnfRunPodID, cnfrun.Spec.LabelsFilter, cnfrun.Spec.LogLevel, cnfrun.Spec.TimeOut)
 
 	// Launch the pod with the CNF Cert Suite container plus the sidecar container to fetch the results.
 	r.updateJobStatus(&cnfrun, "CreatingCertSuiteJob")
@@ -201,7 +195,6 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 	}
 	r.updateJobStatus(&cnfrun, "RunningCertSuite")
 	logrus.Info("Runnning CNF Cert job")
-
 	go r.verifyCnfCertSuiteOutput(ctx, req.NamespacedName.Namespace, cnfCertJobPod, &cnfrun)
 	return ctrl.Result{}, nil
 }
