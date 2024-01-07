@@ -5,13 +5,13 @@ metadata:
   creationTimestamp: null
   name: manager-role
 rules:
-- nonResourceURLs:
-  - '*'
-  verbs:
-  - '*'
-- apiGroups:
-  - '*'
-  resources:
-  - '*'
-  verbs:
-  - '*'
+  - nonResourceURLs:
+      - '*'
+    verbs:
+      - '*'
+  - apiGroups:
+      - '*'
+    resources:
+      - '*'
+    verbs:
+      - '*'

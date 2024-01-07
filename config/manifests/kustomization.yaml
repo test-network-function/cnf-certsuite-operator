@@ -1,10 +1,10 @@
 # These resources constitute the fully configured set of manifests
 # used to generate the 'manifests/' directory in a bundle.
 resources:
-- bases/tnf-op.clusterserviceversion.yaml
-- ../default
-- ../samples
-- ../scorecard
+  - bases/tnf-op.clusterserviceversion.yaml
+  - ../default
+  - ../samples
+  - ../scorecard
 
 patches:
   - target:

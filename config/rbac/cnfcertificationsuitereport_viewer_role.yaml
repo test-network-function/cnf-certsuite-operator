@@ -11,17 +11,17 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
   name: cnfcertificationsuitereport-viewer-role
 rules:
-- apiGroups:
-  - cnf-certifications.redhat.com
-  resources:
-  - cnfcertificationsuitereports
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - cnf-certifications.redhat.com
-  resources:
-  - cnfcertificationsuitereports/status
-  verbs:
-  - get
+  - apiGroups:
+      - cnf-certifications.redhat.com
+    resources:
+      - cnfcertificationsuitereports
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - cnf-certifications.redhat.com
+    resources:
+      - cnfcertificationsuitereports/status
+    verbs:
+      - get
