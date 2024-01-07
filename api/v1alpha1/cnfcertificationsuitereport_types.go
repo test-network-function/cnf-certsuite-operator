@@ -23,25 +23,64 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+type CnfPod struct {
+	Name       string   `json:"name,omitempty"`
+	Namespace  string   `json:"namespace,omitempty"`
+	Containers []string `json:"containers,omitempty"`
+}
+
+type CnfResource struct {
+	Name      string `json:"name,omitempty"`
+	Namespace string `json:"namespace,omitempty"`
+}
+
+type Cnf struct {
+	Namespaces        []string      `json:"namespaces,omitempty"`
+	Nodes             []string      `json:"nodes,omitempty"`
+	Pods              []CnfPod      `json:"pods,omitempty"`
+	Deployments       []CnfResource `json:"deployments,omitempty"`
+	StatefulSets      []CnfResource `json:"statefulSets,omitempty"`
+	Csvs              []CnfResource `json:"csvs,omitempty"`
+	Crds              []string      `json:"crds,omitempty"`
+	Services          []CnfResource `json:"services,omitempty"`
+	HelmChartReleases []CnfResource `json:"helmChartReleases,omitempty"`
+}
+
 // CnfCertificationSuiteReportSpec defines the desired state of CnfCertificationSuiteReport
 type CnfCertificationSuiteReportSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Results holds the result of each test case
-	Results []TestCaseResult `json:"results"`
+	CertSuiteConfigRunName string `json:"certSuiteConfigRunName"`
+	OcpVersion             string `json:"ocpVersion"`
+	CnfCertSuiteVersion    string `json:"cnfCertSuiteVersion"`
+	Cnf                    Cnf    `json:"cnf,omitempty"`
 }
 
 // TestCaseResult holds a test case result
 type TestCaseResult struct {
 	TestCaseName string `json:"testCaseName"`
 	Result       string `json:"result"`
+	Reason       string `json:"reason,omitempty"`
+	Logs         string `json:"logs,omitempty"`
+}
+
+type CnfCertificationSuiteReportStatusSummary struct {
+	Total   int `json:"total"`
+	Passed  int `json:"passed"`
+	Skipped int `json:"skipped"`
+	Failed  int `json:"failed"`
+	Errored int `json:"errored"`
 }
 
 // CnfCertificationSuiteReportStatus defines the observed state of CnfCertificationSuiteReport
 type CnfCertificationSuiteReportStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
+	Verdict string                                   `json:"verdict"`
+	Summary CnfCertificationSuiteReportStatusSummary `json:"summary"`
+	Results []TestCaseResult                         `json:"results"`
 }
 
 //+kubebuilder:object:root=true
