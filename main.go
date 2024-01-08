@@ -83,9 +83,9 @@ func setUpChecks(mgr manager.Manager) {
 }
 
 func main() {
-	var metricsAddr, probeAddr *string
-	var enableLeaderElection *bool
-	defineFlags(metricsAddr, probeAddr, enableLeaderElection)
+	var metricsAddr, probeAddr string
+	var enableLeaderElection bool
+	defineFlags(&metricsAddr, &probeAddr, &enableLeaderElection)
 	opts := zap.Options{Development: true}
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
@@ -99,10 +99,10 @@ func main() {
 	}
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
-		MetricsBindAddress:     *metricsAddr,
+		MetricsBindAddress:     metricsAddr,
 		Port:                   9443,
-		HealthProbeBindAddress: *probeAddr,
-		LeaderElection:         *enableLeaderElection,
+		HealthProbeBindAddress: probeAddr,
+		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "4d82daa5.redhat.com",
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
