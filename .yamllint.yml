@@ -11,6 +11,4 @@ rules:
     level: warning
 no_warnings: true
 ignore:
-  - config/crd/bases
-  - config/rbac/role.yaml
-  - config/manager/kustomization.yaml
+  - config
