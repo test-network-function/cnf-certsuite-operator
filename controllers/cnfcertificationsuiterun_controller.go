@@ -115,7 +115,7 @@ func (r *CnfCertificationSuiteRunReconciler) getCertSuiteContainerExitStatus(cnf
 	return -1
 }
 
-func (r *CnfCertificationSuiteRunReconciler) verifyCnfCertSuiteOutput(ctx context.Context, namespace string, cnfCertJobPod *corev1.Pod, cnfrun *cnfcertificationsv1alpha1.CnfCertificationSuiteRun) {
+func (r *CnfCertificationSuiteRunReconciler) handleEndOfCnfCertSuiteRun(ctx context.Context, namespace string, cnfCertJobPod *corev1.Pod, cnfrun *cnfcertificationsv1alpha1.CnfCertificationSuiteRun) {
 	r.waitForCnfCertJobPodToComplete(ctx, namespace, cnfCertJobPod)
 
 	// cnf-cert-job has terminated - checking exit status of cert suite
@@ -127,6 +127,8 @@ func (r *CnfCertificationSuiteRunReconciler) verifyCnfCertSuiteOutput(ctx contex
 		r.updateJobPhaseStatus(cnfrun, "CertSuiteError")
 		logrus.Info("CNF Cert job encountered an error. Exit status: ", certSuiteExitStatus)
 	}
+
+	r.updateRunCrStatusReportName(ctx, namespace, fmt.Sprintf("%s-report", cnfCertJobPod.Name), cnfrun)
 }
 
 func (r *CnfCertificationSuiteRunReconciler) waitForReportToBeCreated(ctx context.Context, namespace, reportName string) {
@@ -219,8 +221,7 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 	r.updateJobPhaseStatus(&cnfrun, "RunningCertSuite")
 	logrus.Info("Running CNF Cert job")
 
-	r.verifyCnfCertSuiteOutput(ctx, req.NamespacedName.Namespace, cnfCertJobPod, &cnfrun)
-	go r.updateRunCrStatusReportName(ctx, req.NamespacedName.Namespace, fmt.Sprintf("%s-report", podName), &cnfrun)
+	go r.handleEndOfCnfCertSuiteRun(ctx, req.NamespacedName.Namespace, cnfCertJobPod, &cnfrun)
 	return ctrl.Result{}, nil
 }
 
