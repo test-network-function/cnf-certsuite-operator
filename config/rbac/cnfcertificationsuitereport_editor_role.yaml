@@ -11,21 +11,21 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
   name: cnfcertificationsuitereport-editor-role
 rules:
-  - apiGroups:
-      - cnf-certifications.redhat.com
-    resources:
-      - cnfcertificationsuitereports
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - cnf-certifications.redhat.com
-    resources:
-      - cnfcertificationsuitereports/status
-    verbs:
-      - get
+- apiGroups:
+  - cnf-certifications.redhat.com
+  resources:
+  - cnfcertificationsuitereports
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cnf-certifications.redhat.com
+  resources:
+  - cnfcertificationsuitereports/status
+  verbs:
+  - get

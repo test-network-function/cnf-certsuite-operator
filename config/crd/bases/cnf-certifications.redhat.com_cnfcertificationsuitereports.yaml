@@ -15,161 +15,161 @@ spec:
     singular: cnfcertificationsuitereport
   scope: Namespaced
   versions:
-    - name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: CnfCertificationSuiteReport is the Schema for the cnfcertificationsuitereports
-            API
-          properties:
-            apiVersion:
-              description: 'APIVersion defines the versioned schema of this representation
-                of an object. Servers should convert recognized schemas to the latest
-                internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-              type: string
-            kind:
-              description: 'Kind is a string value representing the REST resource this
-                object represents. Servers may infer this from the endpoint the client
-                submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: CnfCertificationSuiteReportSpec defines the desired state
-                of CnfCertificationSuiteReport
-              properties:
-                certSuiteConfigRunName:
-                  type: string
-                cnf:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: CnfCertificationSuiteReport is the Schema for the cnfcertificationsuitereports
+          API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: CnfCertificationSuiteReportSpec defines the desired state
+              of CnfCertificationSuiteReport
+            properties:
+              certSuiteConfigRunName:
+                type: string
+              cnf:
+                properties:
+                  crds:
+                    items:
+                      type: string
+                    type: array
+                  csvs:
+                    items:
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                      type: object
+                    type: array
+                  deployments:
+                    items:
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                      type: object
+                    type: array
+                  helmChartReleases:
+                    items:
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                      type: object
+                    type: array
+                  namespaces:
+                    items:
+                      type: string
+                    type: array
+                  nodes:
+                    items:
+                      type: string
+                    type: array
+                  pods:
+                    items:
+                      properties:
+                        containers:
+                          items:
+                            type: string
+                          type: array
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                      type: object
+                    type: array
+                  services:
+                    items:
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                      type: object
+                    type: array
+                  statefulSets:
+                    items:
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                      type: object
+                    type: array
+                type: object
+              cnfCertSuiteVersion:
+                type: string
+              ocpVersion:
+                type: string
+            required:
+            - certSuiteConfigRunName
+            - cnfCertSuiteVersion
+            - ocpVersion
+            type: object
+          status:
+            description: CnfCertificationSuiteReportStatus defines the observed state
+              of CnfCertificationSuiteReport
+            properties:
+              results:
+                items:
+                  description: TestCaseResult holds a test case result
                   properties:
-                    crds:
-                      items:
-                        type: string
-                      type: array
-                    csvs:
-                      items:
-                        properties:
-                          name:
-                            type: string
-                          namespace:
-                            type: string
-                        type: object
-                      type: array
-                    deployments:
-                      items:
-                        properties:
-                          name:
-                            type: string
-                          namespace:
-                            type: string
-                        type: object
-                      type: array
-                    helmChartReleases:
-                      items:
-                        properties:
-                          name:
-                            type: string
-                          namespace:
-                            type: string
-                        type: object
-                      type: array
-                    namespaces:
-                      items:
-                        type: string
-                      type: array
-                    nodes:
-                      items:
-                        type: string
-                      type: array
-                    pods:
-                      items:
-                        properties:
-                          containers:
-                            items:
-                              type: string
-                            type: array
-                          name:
-                            type: string
-                          namespace:
-                            type: string
-                        type: object
-                      type: array
-                    services:
-                      items:
-                        properties:
-                          name:
-                            type: string
-                          namespace:
-                            type: string
-                        type: object
-                      type: array
-                    statefulSets:
-                      items:
-                        properties:
-                          name:
-                            type: string
-                          namespace:
-                            type: string
-                        type: object
-                      type: array
-                  type: object
-                cnfCertSuiteVersion:
-                  type: string
-                ocpVersion:
-                  type: string
-              required:
-                - certSuiteConfigRunName
-                - cnfCertSuiteVersion
-                - ocpVersion
-              type: object
-            status:
-              description: CnfCertificationSuiteReportStatus defines the observed state
-                of CnfCertificationSuiteReport
-              properties:
-                results:
-                  items:
-                    description: TestCaseResult holds a test case result
-                    properties:
-                      logs:
-                        type: string
-                      reason:
-                        type: string
-                      result:
-                        type: string
-                      testCaseName:
-                        type: string
-                    required:
-                      - result
-                      - testCaseName
-                    type: object
-                  type: array
-                summary:
-                  properties:
-                    errored:
-                      type: integer
-                    failed:
-                      type: integer
-                    passed:
-                      type: integer
-                    skipped:
-                      type: integer
-                    total:
-                      type: integer
+                    logs:
+                      type: string
+                    reason:
+                      type: string
+                    result:
+                      type: string
+                    testCaseName:
+                      type: string
                   required:
-                    - errored
-                    - failed
-                    - passed
-                    - skipped
-                    - total
+                  - result
+                  - testCaseName
                   type: object
-                verdict:
-                  type: string
-              required:
-                - results
-                - summary
-                - verdict
-              type: object
-          type: object
-      served: true
-      storage: true
-      subresources:
-        status: {}
+                type: array
+              summary:
+                properties:
+                  errored:
+                    type: integer
+                  failed:
+                    type: integer
+                  passed:
+                    type: integer
+                  skipped:
+                    type: integer
+                  total:
+                    type: integer
+                required:
+                - errored
+                - failed
+                - passed
+                - skipped
+                - total
+                type: object
+              verdict:
+                type: string
+            required:
+            - results
+            - summary
+            - verdict
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
