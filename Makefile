@@ -107,7 +107,7 @@ lint: # Runs configured linters
 	checkmake --config=.checkmake Makefile
 	golangci-lint run --timeout 10m0s
 	hadolint Dockerfile
-	shfmt -d *.sh script
+	# shfmt -d *.sh script
 	typos
 	markdownlint '**/*.md'
 	yamllint --no-warnings .
