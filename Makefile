@@ -4,6 +4,7 @@
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
 VERSION ?= 0.0.1
+BASH_SCRIPTS=$(shell find . -name "*.sh" -not -path "./.git/*")
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
@@ -63,7 +64,7 @@ endif
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
-.PHONY: all
+.PHONY: all clean
 all: build
 
 ##@ General
@@ -100,6 +101,17 @@ fmt: ## Run go fmt against code.
 .PHONY: vet
 vet: ## Run go vet against code.
 	go vet ./...
+
+.PHONY: lint
+lint: # Runs configured linters
+	checkmake --config=.checkmake Makefile
+	golangci-lint run --timeout 10m0s
+	hadolint Dockerfile
+	# shfmt -d *.sh script
+	typos
+	markdownlint '**/*.md'
+	yamllint --no-warnings .
+	shellcheck --format=gcc ${BASH_SCRIPTS}
 
 .PHONY: test
 test: manifests generate fmt vet envtest ## Run tests.

@@ -10,3 +10,5 @@ rules:
   empty-lines:
     level: warning
 no_warnings: true
+ignore:
+  - config

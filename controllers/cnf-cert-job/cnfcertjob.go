@@ -29,6 +29,7 @@ func NewConfig(podName, namespace, certSuiteConfigRunName, labelsFilter, logLeve
 	}
 }
 
+//nolint:funlen
 func New(config *Config) *corev1.Pod {
 	return &corev1.Pod{
 		TypeMeta: metav1.TypeMeta{},

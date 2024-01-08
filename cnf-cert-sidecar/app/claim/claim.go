@@ -5,10 +5,6 @@ import (
 )
 
 const (
-	supportedClaimFormatVersion = "v0.1.0"
-)
-
-const (
 	TestCaseResultPassed  = "passed"
 	TestCaseResultSkipped = "skipped"
 	TestCaseResultFailed  = "failed"

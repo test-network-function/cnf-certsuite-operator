@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8/ubi:latest AS build
+FROM registry.access.redhat.com/ubi8/ubi:8.9-1028 AS build
 
 # Install dependencies
 # hadolint ignore=DL3041
@@ -21,19 +21,21 @@ ENV \
 ENV GO_BIN_URL_x86_64=${GO_DL_URL}/${GO_BIN_TAR}
 RUN \
 	if [ "$(uname -m)" = x86_64 ]; then \
-		wget --directory-prefix=${TEMP_DIR} ${GO_BIN_URL_x86_64} --quiet \
+		wget --directory-prefix="${TEMP_DIR}" ${GO_BIN_URL_x86_64} --quiet \
 		&& rm -rf /usr/local/go \
-		&& tar -C /usr/local -xzf ${TEMP_DIR}/${GO_BIN_TAR}; \
+		&& tar -C /usr/local -xzf "${TEMP_DIR}/${GO_BIN_TAR}"; \
 	else \
 		echo "CPU architecture is not supported." && exit 1; \
 	fi
 ENV PATH=${PATH}:"/usr/local/go/bin":${GOPATH}/"bin"
 
 # Build app and copy into a empty ubi-minimal image.
+WORKDIR /
 COPY . .
 RUN ls -la && go build -o app cnf-cert-sidecar/app/main.go
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.9-1029
+WORKDIR /
 COPY --from=build app .
 
 ENV SHELL=/bin/bash
