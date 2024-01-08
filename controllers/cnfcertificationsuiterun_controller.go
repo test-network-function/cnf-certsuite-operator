@@ -71,7 +71,7 @@ func ignoreUpdatePredicate() predicate.Predicate {
 	}
 }
 
-// Updates CnfCertificationSuiteRun.Status.Phase correspomding to a given status
+// Updates CnfCertificationSuiteRun.Status.Phase corresponding to a given status
 func (r *CnfCertificationSuiteRunReconciler) updateJobPhaseStatus(cnfrun *cnfcertificationsv1alpha1.CnfCertificationSuiteRun, status string) {
 	cnfrun.Status.Phase = status
 	err := r.Status().Update(context.Background(), cnfrun)
@@ -125,12 +125,11 @@ func (r *CnfCertificationSuiteRunReconciler) verifyCnfCertSuiteOutput(ctx contex
 		logrus.Info("CNF Cert job has finished running.")
 	} else {
 		r.updateJobPhaseStatus(cnfrun, "CertSuiteError")
-		logrus.Info("CNF Cert job encoutered an error. Exit status: ", certSuiteExitStatus)
+		logrus.Info("CNF Cert job encountered an error. Exit status: ", certSuiteExitStatus)
 	}
-
 }
 
-func (r *CnfCertificationSuiteRunReconciler) waitForReportToBeCreated(ctx context.Context, namespace string, reportName string) {
+func (r *CnfCertificationSuiteRunReconciler) waitForReportToBeCreated(ctx context.Context, namespace, reportName string) {
 	reportNamespacedName := types.NamespacedName{
 		Namespace: namespace,
 		Name:      reportName,
@@ -138,16 +137,19 @@ func (r *CnfCertificationSuiteRunReconciler) waitForReportToBeCreated(ctx contex
 	var cnfreport cnfcertificationsv1alpha1.CnfCertificationSuiteReport
 	for err := r.Get(ctx, reportNamespacedName, &cnfreport); err != nil; {
 		logrus.Infof("Waiting for %s to be created...", reportNamespacedName.Name)
-		time.Sleep(5 * time.Second)
+		time.Sleep(multiplier * time.Second)
 		err = r.Get(ctx, reportNamespacedName, &cnfreport)
 	}
 	logrus.Infof("%s has been created", reportNamespacedName.Name)
 }
 
-func (r *CnfCertificationSuiteRunReconciler) updateRunCrStatusReportName(ctx context.Context, namespace string, reportName string, cnfrun *cnfcertificationsv1alpha1.CnfCertificationSuiteRun) {
+func (r *CnfCertificationSuiteRunReconciler) updateRunCrStatusReportName(ctx context.Context, namespace, reportName string, cnfrun *cnfcertificationsv1alpha1.CnfCertificationSuiteRun) {
 	r.waitForReportToBeCreated(ctx, namespace, reportName)
 	cnfrun.Status.ReportName = reportName
-	r.Status().Update(context.Background(), cnfrun)
+	err := r.Status().Update(context.Background(), cnfrun)
+	if err != nil {
+		logrus.Errorf("Error found while updating CnfCertificationSuiteRun's status: %s", err)
+	}
 }
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -215,7 +217,7 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 		return ctrl.Result{}, nil
 	}
 	r.updateJobPhaseStatus(&cnfrun, "RunningCertSuite")
-	logrus.Info("Runnning CNF Cert job")
+	logrus.Info("Running CNF Cert job")
 
 	r.verifyCnfCertSuiteOutput(ctx, req.NamespacedName.Namespace, cnfCertJobPod, &cnfrun)
 	go r.updateRunCrStatusReportName(ctx, req.NamespacedName.Namespace, fmt.Sprintf("%s-report", podName), &cnfrun)
