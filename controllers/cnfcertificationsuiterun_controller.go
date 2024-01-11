@@ -57,7 +57,10 @@ var (
 	cnfRunPodID int
 )
 
-const multiplier = 5
+const (
+	multiplier = 5
+	threshold  = 150 * time.Second
+)
 
 // +kubebuilder:rbac:groups="*",resources="*",verbs="*"
 // +kubebuilder:rbac:urls="*",verbs="*"
@@ -86,7 +89,12 @@ func (r *CnfCertificationSuiteRunReconciler) waitForCnfCertJobPodToComplete(ctx 
 		Name:      cnfCertJobPod.Name,
 	}
 
+	startTime := time.Now()
 	for {
+		if time.Since(startTime) > threshold {
+			logrus.Error("Time threshold reached, job did not complete")
+			break
+		}
 		switch cnfCertJobPod.Status.Phase {
 		case corev1.PodSucceeded:
 			logrus.Info("Cnf job pod has completed successfully.")
@@ -136,8 +144,13 @@ func (r *CnfCertificationSuiteRunReconciler) waitForReportToBeCreated(ctx contex
 		Namespace: namespace,
 		Name:      reportName,
 	}
+	startTime := time.Now()
 	var cnfreport cnfcertificationsv1alpha1.CnfCertificationSuiteReport
 	for err := r.Get(ctx, reportNamespacedName, &cnfreport); err != nil; {
+		if time.Since(startTime) > threshold {
+			logrus.Error("Time threshold reached, report is not found")
+			break
+		}
 		logrus.Infof("Waiting for %s to be created...", reportNamespacedName.Name)
 		time.Sleep(multiplier * time.Second)
 		err = r.Get(ctx, reportNamespacedName, &cnfreport)
