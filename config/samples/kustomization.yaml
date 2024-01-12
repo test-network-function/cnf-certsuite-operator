@@ -9,5 +9,5 @@ resources:
 
 #+kubebuilder:scaffold:manifestskustomizesamples
 
-namespace: test-1
+namespace: cnf-certification-operator
 

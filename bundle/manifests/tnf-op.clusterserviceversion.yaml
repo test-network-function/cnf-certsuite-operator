@@ -16,7 +16,7 @@ metadata:
               "app.kubernetes.io/part-of": "tnf-op"
             },
             "name": "cnfcertificationsuiterun-sample",
-            "namespace": "test-1"
+            "namespace": "cnf-certification-operator"
           },
           "spec": {
             "configMapName": "cnf-certsuite-config",
@@ -28,7 +28,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2024-01-12T12:02:20Z"
+    createdAt: "2024-01-12T12:33:33Z"
     operators.operatorframework.io/builder: operator-sdk-v1.33.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
   name: tnf-op.v0.0.3
