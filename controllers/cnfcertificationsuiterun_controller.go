@@ -58,8 +58,8 @@ var (
 )
 
 const (
-	multiplier = 5
-	threshold  = 150 * time.Second
+	checkInterval              = 5 * time.Second
+	defaultCnfCertSuiteTimeout = time.Hour
 )
 
 // +kubebuilder:rbac:groups="*",resources="*",verbs="*"
@@ -83,7 +83,16 @@ func (r *CnfCertificationSuiteRunReconciler) updateJobPhaseStatus(cnfrun *cnfcer
 	}
 }
 
-func (r *CnfCertificationSuiteRunReconciler) waitForCnfCertJobPodToComplete(ctx context.Context, namespace string, cnfCertJobPod *corev1.Pod) {
+func (r *CnfCertificationSuiteRunReconciler) getJobRunTimeThreshold(timeoutStr string) time.Duration {
+	jobRunTimeThreshold, err := time.ParseDuration(timeoutStr)
+	if err != nil {
+		logrus.Info("Couldn't extarct job run timeout, setting default timeout.")
+		return defaultCnfCertSuiteTimeout
+	}
+	return jobRunTimeThreshold
+}
+
+func (r *CnfCertificationSuiteRunReconciler) waitForCnfCertJobPodToComplete(ctx context.Context, namespace string, cnfCertJobPod *corev1.Pod, jobRunTimeThreshold time.Duration) {
 	cnfCertJobNamespacedName := types.NamespacedName{
 		Namespace: namespace,
 		Name:      cnfCertJobPod.Name,
@@ -91,7 +100,7 @@ func (r *CnfCertificationSuiteRunReconciler) waitForCnfCertJobPodToComplete(ctx 
 
 	startTime := time.Now()
 	for {
-		if time.Since(startTime) > threshold {
+		if time.Since(startTime) > jobRunTimeThreshold {
 			logrus.Error("Time threshold reached, job did not complete")
 			break
 		}
@@ -104,7 +113,7 @@ func (r *CnfCertificationSuiteRunReconciler) waitForCnfCertJobPodToComplete(ctx 
 			return
 		default:
 			logrus.Info("Cnf job pod is running. Current status: ", cnfCertJobPod.Status.Phase)
-			time.Sleep(multiplier * time.Second)
+			time.Sleep(checkInterval)
 		}
 		err := r.Get(ctx, cnfCertJobNamespacedName, cnfCertJobPod)
 		if err != nil {
@@ -124,7 +133,8 @@ func (r *CnfCertificationSuiteRunReconciler) getCertSuiteContainerExitStatus(cnf
 }
 
 func (r *CnfCertificationSuiteRunReconciler) handleEndOfCnfCertSuiteRun(ctx context.Context, namespace string, cnfCertJobPod *corev1.Pod, cnfrun *cnfcertificationsv1alpha1.CnfCertificationSuiteRun) {
-	r.waitForCnfCertJobPodToComplete(ctx, namespace, cnfCertJobPod)
+	jobRunTimeThreshold := r.getJobRunTimeThreshold(cnfrun.Spec.TimeOut)
+	r.waitForCnfCertJobPodToComplete(ctx, namespace, cnfCertJobPod, jobRunTimeThreshold)
 
 	// cnf-cert-job has terminated - checking exit status of cert suite
 	certSuiteExitStatus := r.getCertSuiteContainerExitStatus(cnfCertJobPod)
@@ -147,12 +157,12 @@ func (r *CnfCertificationSuiteRunReconciler) waitForReportToBeCreated(ctx contex
 	startTime := time.Now()
 	var cnfreport cnfcertificationsv1alpha1.CnfCertificationSuiteReport
 	for err := r.Get(ctx, reportNamespacedName, &cnfreport); err != nil; {
-		if time.Since(startTime) > threshold {
+		if time.Since(startTime) > defaultCnfCertSuiteTimeout {
 			logrus.Error("Time threshold reached, report is not found")
 			break
 		}
 		logrus.Infof("Waiting for %s to be created...", reportNamespacedName.Name)
-		time.Sleep(multiplier * time.Second)
+		time.Sleep(checkInterval)
 		err = r.Get(ctx, reportNamespacedName, &cnfreport)
 	}
 	logrus.Infof("%s has been created", reportNamespacedName.Name)
