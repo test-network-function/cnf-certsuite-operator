@@ -7,6 +7,13 @@ import (
 	"github.com/greyerof/cnf-certification-operator/controllers/definitions"
 )
 
+const (
+	// Be careful when changing this SA name.
+	// 1. It must match the flag --extra-service-accounts in "make bundle".
+	// 2. The prefix is "cnf-certsuite-". It should match the field namePrefix field in config/default/kustomization.yaml.
+	clusterAccessServiceAccountName = "cnf-certsuite-cluster-access"
+)
+
 type Config struct {
 	PodName                string
 	Namespace              string
@@ -38,12 +45,12 @@ func New(config *Config) *corev1.Pod {
 			Namespace: config.Namespace,
 		},
 		Spec: corev1.PodSpec{
-			ServiceAccountName: "cnf-certification-operator-controller-manager",
+			ServiceAccountName: clusterAccessServiceAccountName,
 			RestartPolicy:      "Never",
 			Containers: []corev1.Container{
 				{
 					Name:  definitions.CnfCertSuiteSidecarContainerName,
-					Image: "quay.io/rh_ee_shmoran/tnf-op:sidecarv4",
+					Image: "quay.io/greyerof/cnf-op:sidecarv4",
 					Env: []corev1.EnvVar{
 						{
 							Name: "MY_POD_NAME",

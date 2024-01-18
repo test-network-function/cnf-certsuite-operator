@@ -1,17 +1,72 @@
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: Role
 metadata:
   creationTimestamp: null
   name: manager-role
+  namespace: cnf-certification-operator
 rules:
-- nonResourceURLs:
-  - '*'
-  verbs:
-  - '*'
 - apiGroups:
-  - '*'
+  - ""
   resources:
-  - '*'
+  - pods
   verbs:
-  - '*'
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cnf-certifications.redhat.com
+  resources:
+  - cnfcertificationsuitereports
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cnf-certifications.redhat.com
+  resources:
+  - cnfcertificationsuitereports/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cnf-certifications.redhat.com
+  resources:
+  - cnfcertificationsuitereports/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - cnf-certifications.redhat.com
+  resources:
+  - cnfcertificationsuiteruns
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cnf-certifications.redhat.com
+  resources:
+  - cnfcertificationsuiteruns/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cnf-certifications.redhat.com
+  resources:
+  - cnfcertificationsuiteruns/status
+  verbs:
+  - get
+  - patch
+  - update

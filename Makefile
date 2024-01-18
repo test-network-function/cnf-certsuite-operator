@@ -215,11 +215,13 @@ envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
 	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
 
+## IMPORTANT: The serviceaccount "cnf-certsuite-cluster-access" is needed by the CNF's cert pod. The prefix "cnf-certsuite" must match the one in
+## config/default/kustomization.yaml field "namePrefix".
 .PHONY: bundle
 bundle: manifests kustomize ## Generate bundle manifests and metadata, then validate generated files.
 	operator-sdk generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
-	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle $(BUNDLE_GEN_FLAGS)
+	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle $(BUNDLE_GEN_FLAGS) --extra-service-accounts cnf-certsuite-cluster-access
 	operator-sdk bundle validate ./bundle
 
 .PHONY: bundle-build
