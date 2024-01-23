@@ -22,9 +22,10 @@ type Config struct {
 	LogLevel               string
 	ConfigMapName          string
 	PreflightSecretName    string
+	SideCarAppImage        string
 }
 
-func NewConfig(podName, namespace, certSuiteConfigRunName, labelsFilter, logLevel, configMapName, preflightSecretName string) *Config {
+func NewConfig(podName, namespace, certSuiteConfigRunName, labelsFilter, logLevel, configMapName, preflightSecretName, sideCarAppImage string) *Config {
 	return &Config{
 		PodName:                podName,
 		Namespace:              namespace,
@@ -33,6 +34,7 @@ func NewConfig(podName, namespace, certSuiteConfigRunName, labelsFilter, logLeve
 		LogLevel:               logLevel,
 		ConfigMapName:          configMapName,
 		PreflightSecretName:    preflightSecretName,
+		SideCarAppImage:        sideCarAppImage,
 	}
 }
 
@@ -50,7 +52,7 @@ func New(config *Config) *corev1.Pod {
 			Containers: []corev1.Container{
 				{
 					Name:  definitions.CnfCertSuiteSidecarContainerName,
-					Image: "quay.io/greyerof/cnf-op:sidecarv4",
+					Image: config.SideCarAppImage,
 					Env: []corev1.EnvVar{
 						{
 							Name: "MY_POD_NAME",
@@ -77,7 +79,7 @@ func New(config *Config) *corev1.Pod {
 							Value: config.CertSuiteConfigRunName,
 						},
 					},
-					ImagePullPolicy: "Always",
+					ImagePullPolicy: "IfNotPresent",
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      "cnf-certsuite-output",

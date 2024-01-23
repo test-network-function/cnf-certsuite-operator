@@ -80,3 +80,55 @@ jobs:
 
       - name: Go vet
         run: make vet
+  test:
+    name: Build the operator, install it and test it in a kind cluster.
+    runs-on: ubuntu-latest
+    env:
+      SHELL: /bin/bash
+      KUBECONFIG: '/home/runner/.kube/config'
+
+    steps:
+      - name: Disable default go problem matcher
+        run: echo "::remove-matcher owner=go::"
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Build operator
+        run: ./scripts/ci/build.sh
+
+      # Create a Kind cluster for testing.
+      - name: Check out `cnf-certification-test-partner`
+        uses: actions/checkout@v4
+        with:
+          repository: test-network-function/cnf-certification-test-partner
+          path: cnf-certification-test-partner
+
+      - name: Bootstrap cluster, docker, and python
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 90
+          max_attempts: 3
+          command: cd ${GITHUB_WORKSPACE}/cnf-certification-test-partner; make bootstrap-cluster; make make bootstrap-docker-ubuntu-local; make bootstrap-python-ubuntu-local
+
+      - name: Run 'make rebuild-cluster'
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 90
+          max_attempts: 3
+          command: cd ${GITHUB_WORKSPACE}/cnf-certification-test-partner; make rebuild-cluster
+
+      - name: Run 'make install' to deploy test resources in the kind cluster.
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 90
+          max_attempts: 3
+          command: cd ${GITHUB_WORKSPACE}/cnf-certification-test-partner; make install
+
+      - name: Install operator
+        run: ./scripts/ci/deploy.sh
+
+      - name: Run simple smoke test.
+        run: ./scripts/cli/smoke_test.sh
