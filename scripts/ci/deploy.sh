@@ -24,15 +24,15 @@ export VERSION="${VERSION:-$DEFAULT_TEST_VERSION}"
 export SIDECAR_IMG="${SIDECAR_IMG:-$DEFAULT_SIDECAR_IMG}"
 export IMG="${IMG:-$DEFAULT_IMG}"
 
-kind load docker-image ${SIDECAR_IMG}
-kind load docker-image ${IMG}
+kind load docker-image "${SIDECAR_IMG}"
+kind load docker-image "${IMG}"
 
 # "make deploy" uses the IMG env var internally, and it needs to be exported.
 # let's patch the installation namespace.
 make kustomize
 
 pushd config/default
-  ../../bin/kustomize edit set namespace ${CNF_CERTSUITE_OPERATOR_NAMESPACE}
+  ../../bin/kustomize edit set namespace "${CNF_CERTSUITE_OPERATOR_NAMESPACE}"
 popd
 
 make deploy

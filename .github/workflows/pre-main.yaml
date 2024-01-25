@@ -99,6 +99,12 @@ jobs:
       - name: Build operator
         run: ./scripts/ci/build.sh
 
+      - name: Removed unused docker images.
+        run: |
+          df -h
+          docker builder prune --all -f
+          df -h
+
       # Create a Kind cluster for testing.
       - name: Check out `cnf-certification-test-partner`
         uses: actions/checkout@v4
@@ -126,6 +132,12 @@ jobs:
           timeout_minutes: 90
           max_attempts: 3
           command: cd ${GITHUB_WORKSPACE}/cnf-certification-test-partner; make install
+
+      - name: Removed unused docker images.
+      run: |
+        df -h
+        docker builder prune --all -f
+        df -h
 
       - name: Install operator
         run: ./scripts/ci/deploy.sh

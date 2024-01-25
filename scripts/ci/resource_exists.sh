@@ -31,11 +31,11 @@ fi
 echo "Polling every ${INTERVAL_CHECK_SEGS} secs for ${RESOURCE_NAME} (kind: ${RESOURCE_KIND}) to exist in namespace ${NAMESPACE}"
 
 while true; do
-  if oc get ${RESOURCE_KIND} -n ${NAMESPACE} ${RESOURCE_NAME} ; then
+  if oc get "${RESOURCE_KIND}" -n "${NAMESPACE}" "${RESOURCE_NAME}" ; then
     echo "${RESOURCE_NAME} (kind: ${RESOURCE_KIND}) found in namespace ${NAMESPACE}."
     exit 0
   fi
 
   echo "${RESOURCE_NAME} (kind: ${RESOURCE_KIND}) not found yet in namespace ${NAMESPACE}..."
-  sleep ${INTERVAL_CHECK_SEGS}
+  sleep "${INTERVAL_CHECK_SEGS}"
 done
