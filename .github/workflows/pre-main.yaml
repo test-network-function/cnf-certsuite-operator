@@ -72,7 +72,7 @@ jobs:
 
       - name: Typos
         uses: crate-ci/typos@master
- 
+
       - name: Yamllint
         uses: ibiqlik/action-yamllint@v3
         with:
@@ -80,9 +80,10 @@ jobs:
 
       - name: Go vet
         run: make vet
+
   test:
-    name: Build the operator, install it and test it in a kind cluster.
-    runs-on: ubuntu-latest
+    name: Build, install and test operator in a Kind cluster
+    runs-on: ubuntu-22.04
     env:
       SHELL: /bin/bash
       KUBECONFIG: '/home/runner/.kube/config'
@@ -99,14 +100,16 @@ jobs:
       - name: Build operator
         run: ./scripts/ci/build.sh
 
-      - name: Removed unused docker images.
+      - name: Removed unused docker images and go cache cleanup
         run: |
           df -h
+          docker rmi $(docker images -f "dangling=true" -q) || true
           docker builder prune --all -f
+          go clean -modcache
           df -h
 
       # Create a Kind cluster for testing.
-      - name: Check out `cnf-certification-test-partner`
+      - name: Check out `cnf-certification-test-partner` repo
         uses: actions/checkout@v4
         with:
           repository: test-network-function/cnf-certification-test-partner
@@ -115,32 +118,38 @@ jobs:
       - name: Bootstrap cluster, docker, and python
         uses: nick-fields/retry@v2
         with:
-          timeout_minutes: 90
+          timeout_minutes: 5
           max_attempts: 3
-          command: cd ${GITHUB_WORKSPACE}/cnf-certification-test-partner; make bootstrap-cluster; make make bootstrap-docker-ubuntu-local; make bootstrap-python-ubuntu-local
+          command: cd ${GITHUB_WORKSPACE}/cnf-certification-test-partner; make bootstrap-cluster && make bootstrap-docker-ubuntu-local && make bootstrap-python-ubuntu-local
 
       - name: Run 'make rebuild-cluster'
         uses: nick-fields/retry@v2
+        env:
+          SKIP_PRELOAD_IMAGES: true
         with:
-          timeout_minutes: 90
+          timeout_minutes: 15
           max_attempts: 3
           command: cd ${GITHUB_WORKSPACE}/cnf-certification-test-partner; make rebuild-cluster
 
-      - name: Run 'make install' to deploy test resources in the kind cluster.
+      - name: Run 'make install'
         uses: nick-fields/retry@v2
+        env:
+          SKIP_PRELOAD_IMAGES: true
         with:
-          timeout_minutes: 90
+          timeout_minutes: 20
           max_attempts: 3
           command: cd ${GITHUB_WORKSPACE}/cnf-certification-test-partner; make install
 
-      - name: Removed unused docker images.
+      - name: More cleanup
         run: |
           df -h
+          docker rmi $(docker images -f "dangling=true" -q) || true
           docker builder prune --all -f
+          go clean -modcache
           df -h
 
-      - name: Install operator
+      - name: Install operator in the Kind cluster
         run: ./scripts/ci/deploy.sh
 
       - name: Run simple smoke test.
-        run: ./scripts/cli/smoke_test.sh
+        run: ./scripts/ci/smoke_test.sh
