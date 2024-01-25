@@ -134,10 +134,10 @@ jobs:
           command: cd ${GITHUB_WORKSPACE}/cnf-certification-test-partner; make install
 
       - name: Removed unused docker images.
-      run: |
-        df -h
-        docker builder prune --all -f
-        df -h
+        run: |
+          df -h
+          docker builder prune --all -f
+          df -h
 
       - name: Install operator
         run: ./scripts/ci/deploy.sh
