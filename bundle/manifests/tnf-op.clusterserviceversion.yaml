@@ -16,7 +16,7 @@ metadata:
               "app.kubernetes.io/part-of": "tnf-op"
             },
             "name": "cnfcertificationsuiterun-sample",
-            "namespace": "cnf-certification-operator"
+            "namespace": "cnf-certsuite-operator"
           },
           "spec": {
             "configMapName": "cnf-certsuite-config",
@@ -28,10 +28,10 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2024-01-12T12:33:33Z"
+    createdAt: "2024-01-25T07:40:11Z"
     operators.operatorframework.io/builder: operator-sdk-v1.33.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
-  name: tnf-op.v0.0.3
+  name: tnf-op.v0.0.1
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -157,8 +157,10 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.annotations['olm.targetNamespaces']
-                image: quay.io/greyerof/cnf-op:initialtestv5
-                imagePullPolicy: Always
+                - name: SIDECAR_APP_IMG
+                  value: quay.io/testnetworkfunction/cnf-certsuite-operator-sidecar:v0.0.1
+                image: quay.io/testnetworkfunction/cnf-certsuite-operator:v0.0.1
+                imagePullPolicy: IfNotPresent
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -307,4 +309,4 @@ spec:
   maturity: alpha
   provider:
     name: RedHat
-  version: 0.0.3
+  version: 0.0.1

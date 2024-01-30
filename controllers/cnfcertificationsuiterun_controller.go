@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -38,6 +39,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 )
+
+var sideCarImage string
 
 // CnfCertificationSuiteRunReconciler reconciles a CnfCertificationSuiteRun object
 type CnfCertificationSuiteRunReconciler struct {
@@ -239,7 +242,8 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 		cnfrun.Spec.LabelsFilter,
 		cnfrun.Spec.LogLevel,
 		cnfrun.Spec.ConfigMapName,
-		cnfrun.Spec.PreflightSecretName)
+		cnfrun.Spec.PreflightSecretName,
+		sideCarImage)
 	cnfCertJobPod := cnfcertjob.New(config)
 
 	err := r.Create(ctx, cnfCertJobPod)
@@ -259,6 +263,12 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 func (r *CnfCertificationSuiteRunReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	logrus.Infof("Setting up CnfCertificationSuiteRunReconciler's manager.")
 	certificationRuns = map[certificationRun]string{}
+
+	var found bool
+	sideCarImage, found = os.LookupEnv(definitions.SideCarImageEnvVar)
+	if !found {
+		return fmt.Errorf("sidecar app img env var %q not found", definitions.SideCarImageEnvVar)
+	}
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&cnfcertificationsv1alpha1.CnfCertificationSuiteRun{}).

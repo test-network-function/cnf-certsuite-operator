@@ -75,9 +75,11 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        - name: SIDECAR_APP_IMG
+          value: quay.io/testnetworkfunction/cnf-certsuite-operator-sidecar:v0.0.1
         image: controller:latest
         name: manager
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

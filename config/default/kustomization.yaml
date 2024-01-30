@@ -1,5 +1,5 @@
 # Adds namespace to all resources.
-namespace: cnf-certification-operator
+namespace: cnf-certsuite-operator
 
 # Value of this field is prepended to the
 # names of all resources, e.g. a deployment named
