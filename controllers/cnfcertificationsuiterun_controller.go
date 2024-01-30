@@ -201,7 +201,6 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 	logrus.Infof("Reconciling CnfCertificationSuiteRun CRD.")
 
 	reqCertificationRun := certificationRun{name: req.Name, namespace: req.Namespace}
-
 	var cnfrun cnfcertificationsv1alpha1.CnfCertificationSuiteRun
 	if getErr := r.Get(ctx, req.NamespacedName, &cnfrun); getErr != nil {
 		logrus.Infof("CnfCertificationSuiteRun CR %s (ns %s) not found.", req.Name, req.NamespacedName)
@@ -241,6 +240,7 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 		cnfrun.Name,
 		cnfrun.Spec.LabelsFilter,
 		cnfrun.Spec.LogLevel,
+		cnfrun.Spec.TimeOut,
 		cnfrun.Spec.ConfigMapName,
 		cnfrun.Spec.PreflightSecretName,
 		sideCarImage)

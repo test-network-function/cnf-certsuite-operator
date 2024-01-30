@@ -20,18 +20,20 @@ type Config struct {
 	CertSuiteConfigRunName string
 	LabelsFilter           string
 	LogLevel               string
+	TimeOut                string
 	ConfigMapName          string
 	PreflightSecretName    string
 	SideCarAppImage        string
 }
 
-func NewConfig(podName, namespace, certSuiteConfigRunName, labelsFilter, logLevel, configMapName, preflightSecretName, sideCarAppImage string) *Config {
+func NewConfig(podName, namespace, certSuiteConfigRunName, labelsFilter, logLevel, timeOut, configMapName, preflightSecretName, sideCarAppImage string) *Config {
 	return &Config{
 		PodName:                podName,
 		Namespace:              namespace,
 		CertSuiteConfigRunName: certSuiteConfigRunName,
 		LabelsFilter:           labelsFilter,
 		LogLevel:               logLevel,
+		TimeOut:                timeOut,
 		ConfigMapName:          configMapName,
 		PreflightSecretName:    preflightSecretName,
 		SideCarAppImage:        sideCarAppImage,
@@ -109,6 +111,10 @@ func New(config *Config) *corev1.Pod {
 						{
 							Name:  "TNF_NON_INTRUSIVE_ONLY",
 							Value: "true",
+						},
+						{
+							Name:  "TIMEOUT",
+							Value: config.TimeOut,
 						},
 					},
 					ImagePullPolicy: "Always",
