@@ -9,6 +9,15 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - configMaps
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - pods
   verbs:
   - create

@@ -140,6 +140,9 @@ jobs:
           max_attempts: 3
           command: cd ${GITHUB_WORKSPACE}/cnf-certification-test-partner; make install
 
+      - name: Install cert-manager to cluster
+        run: kubectl apply -f https://github.com/jetstack/cert-manager/releases/latest/download/cert-manager.yaml
+
       - name: More cleanup
         run: |
           df -h
