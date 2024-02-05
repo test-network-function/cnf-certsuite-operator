@@ -20,6 +20,9 @@ resources:
   kind: CnfCertificationSuiteRun
   path: github.com/greyerof/cnf-certification-operator/api/v1alpha1
   version: v1alpha1
+  webhooks:
+    validation: true
+    webhookVersion: v1
 - api:
     crdVersion: v1
     namespaced: true
