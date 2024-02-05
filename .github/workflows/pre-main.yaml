@@ -154,8 +154,5 @@ jobs:
       - name: Install operator in the Kind cluster
         run: ./scripts/ci/deploy.sh
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-
       - name: Run simple smoke test.
         run: ./scripts/ci/smoke_test.sh
