@@ -30,7 +30,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	cnfcertificationsv1alpha1 "github.com/greyerof/cnf-certification-operator/api/v1alpha1"
@@ -58,7 +57,7 @@ var (
 	// Holds an autoincremental CNF Cert Suite pod id
 	cnfRunPodID int
 	// sets controller's logger.
-	controllerLogger = controllerlogger.New(log.FromContext(context.TODO()))
+	logger = controllerlogger.New()
 )
 
 const (
@@ -90,14 +89,14 @@ func (r *CnfCertificationSuiteRunReconciler) updateJobPhaseStatus(cnfrun *cnfcer
 	cnfrun.Status.Phase = status
 	err := r.Status().Update(context.Background(), cnfrun)
 	if err != nil {
-		controllerLogger.Errorf("Error found while updating CnfCertificationSuiteRun's status: %w", err)
+		logger.Errorf("Error found while updating CnfCertificationSuiteRun's status: %w", err)
 	}
 }
 
 func (r *CnfCertificationSuiteRunReconciler) getJobRunTimeThreshold(timeoutStr string) time.Duration {
 	jobRunTimeThreshold, err := time.ParseDuration(timeoutStr)
 	if err != nil {
-		controllerLogger.Info("Couldn't extarct job run timeout, setting default timeout.")
+		logger.Info("Couldn't extarct job run timeout, setting default timeout.")
 		return defaultCnfCertSuiteTimeout
 	}
 	return jobRunTimeThreshold
@@ -112,23 +111,23 @@ func (r *CnfCertificationSuiteRunReconciler) waitForCnfCertJobPodToComplete(ctx 
 	startTime := time.Now()
 	for {
 		if time.Since(startTime) > jobRunTimeThreshold {
-			controllerLogger.Error("Time threshold reached, job did not complete")
+			logger.Error("Time threshold reached, job did not complete")
 			break
 		}
 		switch cnfCertJobPod.Status.Phase {
 		case corev1.PodSucceeded:
-			controllerLogger.Info("Cnf job pod has completed successfully.")
+			logger.Info("Cnf job pod has completed successfully.")
 			return
 		case corev1.PodFailed:
-			controllerLogger.Info("Cnf job pod has completed with failure.")
+			logger.Info("Cnf job pod has completed with failure.")
 			return
 		default:
-			controllerLogger.Infof("Cnf job pod is running. Current status: %s", cnfCertJobPod.Status.Phase)
+			logger.Infof("Cnf job pod is running. Current status: %s", cnfCertJobPod.Status.Phase)
 			time.Sleep(checkInterval)
 		}
 		err := r.Get(ctx, cnfCertJobNamespacedName, cnfCertJobPod)
 		if err != nil {
-			controllerLogger.Errorf("Error found while getting cnf cert job pod: %w", err)
+			logger.Errorf("Error found while getting cnf cert job pod: %w", err)
 		}
 	}
 }
@@ -151,10 +150,10 @@ func (r *CnfCertificationSuiteRunReconciler) handleEndOfCnfCertSuiteRun(ctx cont
 	certSuiteExitStatus := r.getCertSuiteContainerExitStatus(cnfCertJobPod)
 	if certSuiteExitStatus == 0 {
 		r.updateJobPhaseStatus(cnfrun, "CertSuiteFinished")
-		controllerLogger.Info("CNF Cert job has finished running.")
+		logger.Info("CNF Cert job has finished running.")
 	} else {
 		r.updateJobPhaseStatus(cnfrun, "CertSuiteError")
-		controllerLogger.Info("CNF Cert job encountered an error. Exit status: ", certSuiteExitStatus)
+		logger.Info("CNF Cert job encountered an error. Exit status: ", certSuiteExitStatus)
 	}
 
 	r.updateRunCrStatusReportName(ctx, namespace, fmt.Sprintf("%s-report", cnfCertJobPod.Name), cnfrun)
@@ -169,14 +168,14 @@ func (r *CnfCertificationSuiteRunReconciler) waitForReportToBeCreated(ctx contex
 	var cnfreport cnfcertificationsv1alpha1.CnfCertificationSuiteReport
 	for err := r.Get(ctx, reportNamespacedName, &cnfreport); err != nil; {
 		if time.Since(startTime) > defaultCnfCertSuiteTimeout {
-			controllerLogger.Error("Time threshold reached, report is not found")
+			logger.Error("Time threshold reached, report is not found")
 			break
 		}
-		controllerLogger.Infof("Waiting for %s to be created...", reportNamespacedName.Name)
+		logger.Infof("Waiting for %s to be created...", reportNamespacedName.Name)
 		time.Sleep(checkInterval)
 		err = r.Get(ctx, reportNamespacedName, &cnfreport)
 	}
-	controllerLogger.Infof("%s has been created", reportNamespacedName.Name)
+	logger.Infof("%s has been created", reportNamespacedName.Name)
 }
 
 func (r *CnfCertificationSuiteRunReconciler) updateRunCrStatusReportName(ctx context.Context, namespace, reportName string, cnfrun *cnfcertificationsv1alpha1.CnfCertificationSuiteRun) {
@@ -184,7 +183,7 @@ func (r *CnfCertificationSuiteRunReconciler) updateRunCrStatusReportName(ctx con
 	cnfrun.Status.ReportName = reportName
 	err := r.Status().Update(context.Background(), cnfrun)
 	if err != nil {
-		controllerLogger.Errorf("Error found while updating CnfCertificationSuiteRun's status: %w", err)
+		logger.Errorf("Error found while updating CnfCertificationSuiteRun's status: %w", err)
 	}
 }
 
@@ -198,18 +197,18 @@ func (r *CnfCertificationSuiteRunReconciler) updateRunCrStatusReportName(ctx con
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
 func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	controllerLogger.Info("Reconciling CnfCertificationSuiteRun CRD.")
+	logger.Info("Reconciling CnfCertificationSuiteRun CRD.")
 
 	reqCertificationRun := certificationRun{name: req.Name, namespace: req.Namespace}
 
 	var cnfrun cnfcertificationsv1alpha1.CnfCertificationSuiteRun
 	if getErr := r.Get(ctx, req.NamespacedName, &cnfrun); getErr != nil {
-		controllerLogger.Infof("CnfCertificationSuiteRun CR %s (ns %s) not found.", req.Name, req.NamespacedName)
+		logger.Infof("CnfCertificationSuiteRun CR %s (ns %s) not found.", req.Name, req.NamespacedName)
 		if podName, exist := certificationRuns[reqCertificationRun]; exist {
-			controllerLogger.Infof("CnfCertificationSuiteRun has been deleted. Removing the associated CNF Cert job pod %v", podName)
+			logger.Infof("CnfCertificationSuiteRun has been deleted. Removing the associated CNF Cert job pod %v", podName)
 			deleteErr := r.Delete(context.TODO(), &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: podName, Namespace: req.Namespace}})
 			if deleteErr != nil {
-				controllerLogger.Errorf("Failed to remove CNF Cert Job pod %s in namespace %s: %w", req.Name, req.Namespace, deleteErr)
+				logger.Errorf("Failed to remove CNF Cert Job pod %s in namespace %s: %w", req.Name, req.Namespace, deleteErr)
 			}
 			delete(certificationRuns, reqCertificationRun)
 		}
@@ -217,11 +216,11 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 	}
 
 	if podName, exist := certificationRuns[reqCertificationRun]; exist {
-		controllerLogger.Infof("There's a certification job pod=%v running already. Ignoring changes in CnfCertificationSuiteRun %v", podName, reqCertificationRun)
+		logger.Infof("There's a certification job pod=%v running already. Ignoring changes in CnfCertificationSuiteRun %v", podName, reqCertificationRun)
 		return ctrl.Result{}, nil
 	}
 
-	controllerLogger.Infof("New CNF Certification Job run requested: %v", reqCertificationRun)
+	logger.Infof("New CNF Certification Job run requested: %v", reqCertificationRun)
 
 	cnfRunPodID++
 	podName := fmt.Sprintf("%s-%d", definitions.CnfCertPodNamePrefix, cnfRunPodID)
@@ -229,12 +228,12 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 	// Store the new run & associated CNF Cert pod name
 	certificationRuns[reqCertificationRun] = podName
 
-	controllerLogger.Infof("Running CNF Certification Suite container (job id=%d) with labels %q, log level %q and timeout: %q",
+	logger.Infof("Running CNF Certification Suite container (job id=%d) with labels %q, log level %q and timeout: %q",
 		cnfRunPodID, cnfrun.Spec.LabelsFilter, cnfrun.Spec.LogLevel, cnfrun.Spec.TimeOut)
 
 	// Launch the pod with the CNF Cert Suite container plus the sidecar container to fetch the results.
 	r.updateJobPhaseStatus(&cnfrun, "CreatingCertSuiteJob")
-	controllerLogger.Info("Creating CNF Cert job pod")
+	logger.Info("Creating CNF Cert job pod")
 	config := cnfcertjob.NewConfig(
 		podName,
 		req.Namespace,
@@ -248,12 +247,12 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 
 	err := r.Create(ctx, cnfCertJobPod)
 	if err != nil {
-		controllerLogger.Errorf("Failed to create CNF Cert job pod: %w", err)
+		logger.Errorf("Failed to create CNF Cert job pod: %w", err)
 		r.updateJobPhaseStatus(&cnfrun, "FailedToDeployCertSuitePod")
 		return ctrl.Result{}, nil
 	}
 	r.updateJobPhaseStatus(&cnfrun, "RunningCertSuite")
-	controllerLogger.Info("Running CNF Cert job")
+	logger.Info("Running CNF Cert job")
 
 	go r.handleEndOfCnfCertSuiteRun(ctx, req.NamespacedName.Namespace, cnfCertJobPod, &cnfrun)
 	return ctrl.Result{}, nil
@@ -261,7 +260,7 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *CnfCertificationSuiteRunReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	controllerLogger.Info("Setting up CnfCertificationSuiteRunReconciler's manager.")
+	logger.Info("Setting up CnfCertificationSuiteRunReconciler's manager.")
 	certificationRuns = map[certificationRun]string{}
 
 	var found bool
