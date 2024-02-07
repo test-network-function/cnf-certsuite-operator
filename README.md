@@ -1,10 +1,11 @@
-# tnf-op
+# CNF Certification Suite Operator
 
-Red Hat's CNF Certification Suite Operator PoC
+[![red hat](https://img.shields.io/badge/red%20hat---?color=gray&logo=redhat&logoColor=red&style=flat)](https://www.redhat.com)
+[![openshift](https://img.shields.io/badge/openshift---?color=gray&logo=redhatopenshift&logoColor=red&style=flat)](https://www.redhat.com/en/technologies/cloud-computing/openshift)
 
 ## Description
 
-Proof of Concept for a Kubernetes/Openshift Operator running the
+Kubernetes/Openshift Operator (scaffolded with operator-sdk) running the
 [CNF Certification Suite Container](https://github.com/test-network-function/cnf-certification-test).
 
 ## Getting Started
@@ -15,25 +16,76 @@ or run against a remote cluster.
 **Note:** Your controller will automatically use the current context in your
 kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
 
-### Running on the cluster
+### Install operator
 
-1. Install Instances of Custom Resources:
+Deploy the controller to the cluster with the image specified by `IMG`:
 
-    ```sh
-    kubectl apply -f config/samples/
-    ```
+```sh
+make deploy IMG=quay.io/testnetworkfunction/cnf-certsuite-operator:<tag>
+```
 
-2. Build and push your image to the location specified by `IMG`:
+### Running test suites on the cluster
 
-    ```sh
-    make docker-build docker-push IMG=<some-registry>/tnf-op:tag
-    ```
+#### 1. Create Resources
 
-3. Deploy the controller to the cluster with the image specified by `IMG`:
+In order to use the cnf certification suite operator,
+you'll have to create yaml files for the following resources:
 
-    ```sh
-    make deploy IMG=<some-registry>/tnf-op:tag
-    ```
+1. Config map:\
+Containing the cnf certification configuration file
+content under the `tnf_config.yaml` key.\
+(see [CNF Certification configuration description](https://test-network-function.github.io/cnf-certification-test/configuration/))
+
+2. Secret:\
+Containing cnf preflight suite credentials
+under the `preflight_dockerconfig.json` key.\
+(see [Preflight Integration description](https://test-network-function.github.io/cnf-certification-test/runtime-env/#disable-intrusive-tests))
+
+3. CnfCertificationSuiteRun CR:\
+Containing the following Spec fields that has to be filled in:
+    - **labelsFilter**: Wanted label filtering the cnf certification tests suite.
+    - **logLevel**: Wanted log level of cnf certification tests suite run.
+    - **timeout**: Wanted timeout for the the cnf certification tests.
+    - **configMapName**: Name of config map defined at stage 1.
+    - **preflightSecretName**: Name of preflight Secret defined at stage 2.
+
+    See a [sample CnfCertificationSuiteRun CR](https://github.com/greyerof/tnf-op/blob/main/config/samples/cnf-certifications_v1alpha1_cnfcertificationsuiterun.yaml)
+
+**Note:** All resources have to be defined under the `cnf-certsuite-operator` namespace.
+
+#### 2. Apply resources into the cluster
+
+After creating all the yaml files for required resources,
+use the following commands to apply them into the cluster:
+
+```sh
+oc apply -f /path/to/config/map.yaml
+oc apply -f /path/to/preflight/secret.yaml
+oc apply -f /path/to/cnfCertificationSuiteRun.yaml
+```
+
+**Note**: The same config map and secret can be reused
+by different CnfCertificationSuiteRun CR's.
+
+#### 3. Review results
+
+If all of the resources were applied successfully, the cnfcertification suites
+will run on a new created `pod` in the `cnf-certsuite-operator` namespace.
+
+When the pod is completed, a new `CnfCertificationSuiteReport` will be created
+under the same namespace. Run the following command to ensure its creation:
+
+```sh
+oc get cnfcertificationsuitereports.cnf-certifications.redhat.com -n cnf-certsuite-operator
+```
+
+To review the test results describe the created
+`CnfCertificationSuiteReport` run the following command:
+
+```sh
+oc describe cnfcertificationsuitereports.cnf-certifications.redhat.com \
+-n cnf-certsuite-operator <report`s name>
+```
 
 ### Uninstall CRDs
 
@@ -49,53 +101,6 @@ UnDeploy the controller from the cluster:
 
 ```sh
 make undeploy
-```
-
-## Contributing
-
-// TODO(user): Add detailed information on how you would
-like others to contribute to this project
-
-### How it works
-
-This project aims to follow the Kubernetes
-[Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/).
-
-It uses
-[Controllers](https://kubernetes.io/docs/concepts/architecture/controller/),
-which provide a reconcile function responsible for synchronizing resources until
-the desired state is reached on the cluster.
-
-### Test It Out
-
-1. Install the CRDs into the cluster:
-
-    ```sh
-    make install
-    ```
-
-2. Run your controller (this will run in the foreground,
-so switch to a new terminal if you want to leave it running):
-
-    ```sh
-    make run
-    ```
-
-    **NOTE:** You can also run this in one step by running: `make install run`
-
-3. Sample CnfCertificationSuiteRun CR:
-
-    ```sh
-    oc apply -f cert-run.yaml
-    ```
-
-### Modifying the API definitions
-
-If you are editing the API definitions,
-generate the manifests such as CRs or CRDs using:
-
-```sh
-make manifests
 ```
 
 **NOTE:** Run `make --help` for more information on all potential `make` targets
