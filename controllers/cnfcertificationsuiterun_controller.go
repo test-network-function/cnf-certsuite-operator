@@ -74,6 +74,7 @@ const (
 // +kubebuilder:rbac:groups=cnf-certifications.redhat.com,namespace=cnf-certification-operator,resources=cnfcertificationsuitereports/finalizers,verbs=update
 
 // +kubebuilder:rbac:groups="",namespace=cnf-certification-operator,resources=pods,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",namespace=cnf-certification-operator,resources=secrets;configMaps,verbs=get;list;watch
 
 func ignoreUpdatePredicate() predicate.Predicate {
 	return predicate.Funcs{

@@ -32,12 +32,18 @@ import (
 )
 
 // log is for logging in this package.
-var cnfcertificationsuiterunlog = logf.Log.WithName("cnfcertificationsuiterun-resource")
+var logger = logf.Log.WithName("cnfcertificationsuiterun-resource")
 
 var c client.Client
 
+var (
+	configMapLoggerKey       = "configMapName"
+	preflightSecretLoggerKey = "preflightSecretName"
+	logLevelLoggerKey        = "logLevel"
+)
+
 func (r *CnfCertificationSuiteRun) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	err := r.createClient()
+	_, err := createClient()
 	if err != nil {
 		return err
 	}
@@ -46,17 +52,17 @@ func (r *CnfCertificationSuiteRun) SetupWebhookWithManager(mgr ctrl.Manager) err
 		Complete()
 }
 
-func (r *CnfCertificationSuiteRun) createClient() error {
+func createClient() (client.Client, error) {
 	kubeconfig, err := rest.InClusterConfig()
 	if err != nil {
-		return fmt.Errorf("error getting OpenShift config: %v", err)
+		return nil, fmt.Errorf("error getting OpenShift config: %v", err)
 	}
 
 	c, err = client.New(kubeconfig, client.Options{})
 	if err != nil {
-		return fmt.Errorf("error creating client: %v", err)
+		return nil, fmt.Errorf("error creating client: %v", err)
 	}
-	return nil
+	return c, nil
 }
 
 // TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -69,42 +75,61 @@ var _ webhook.Validator = &CnfCertificationSuiteRun{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *CnfCertificationSuiteRun) ValidateCreate() error {
-	cnfcertificationsuiterunlog.Info("validate create", "name", r.Name)
+	logger.Info("validate create", "name", r.Name)
 
+	err := r.validateConfigMap()
+	if err != nil {
+		return err
+	}
+
+	err = r.validatePreflightSecret()
+	if err != nil {
+		return err
+	}
+
+	err = r.validateLogLevel()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *CnfCertificationSuiteRun) validateConfigMap() error {
 	configMap := &v1.ConfigMap{}
-	preflightSecret := &v1.Secret{}
-
-	// Validate config map name field
 	err := c.Get(context.TODO(), types.NamespacedName{Name: r.Spec.ConfigMapName, Namespace: r.Namespace}, configMap)
 	if err != nil {
-		cnfcertificationsuiterunlog.Error(err, "CnfCertificationSuiteRun's config map name field is invalid",
-			"config map name", r.Spec.ConfigMapName)
+		logger.Error(err, "CnfCertificationSuiteRun's config map name field is invalid",
+			configMapLoggerKey, r.Spec.ConfigMapName)
 		return err
 	}
-	cnfcertificationsuiterunlog.Info("CnfCertificationSuiteRun's config map name field is valid", "config map name", configMap.Name)
+	logger.Info("CnfCertificationSuiteRun's config map name field is valid", configMapLoggerKey, configMap.Name)
+	return err
+}
 
-	// Validate preflight secret name field
-	err = c.Get(context.TODO(), types.NamespacedName{Name: r.Spec.PreflightSecretName, Namespace: r.Namespace}, preflightSecret)
+func (r *CnfCertificationSuiteRun) validatePreflightSecret() error {
+	preflightSecret := &v1.Secret{}
+	err := c.Get(context.TODO(), types.NamespacedName{Name: r.Spec.PreflightSecretName, Namespace: r.Namespace}, preflightSecret)
 	if err != nil {
-		cnfcertificationsuiterunlog.Error(err, "CnfCertificationSuiteRun's preflight secret name field is invalid",
-			"preflight secret name", r.Spec.PreflightSecretName)
+		logger.Error(err, "CnfCertificationSuiteRun's preflight secret name field is invalid",
+			preflightSecretLoggerKey, r.Spec.PreflightSecretName)
 		return err
 	}
-	cnfcertificationsuiterunlog.Info("CnfCertificationSuiteRun's preflight secret name field is valid", "preflight secret name", preflightSecret.Name)
+	logger.Info("CnfCertificationSuiteRun's preflight secret name field is valid", preflightSecretLoggerKey, preflightSecret.Name)
+	return nil
+}
 
-	// Validate log level
+func (r *CnfCertificationSuiteRun) validateLogLevel() error {
 	logLevelLowerCase := strings.ToLower(r.Spec.LogLevel)
 	switch logLevelLowerCase {
 	case "info", "debug", "warn", "warning", "error":
-		cnfcertificationsuiterunlog.Info("CnfCertificationSuiteRun's log level field is valid", "log level", logLevelLowerCase)
+		logger.Info("CnfCertificationSuiteRun's log level field is valid", logLevelLoggerKey, logLevelLowerCase)
 	default:
-		err = fmt.Errorf("not a valid slog Level: %q", logLevelLowerCase)
-		cnfcertificationsuiterunlog.Error(err, "CnfCertificationSuiteRun's log level field is invalid",
-			"log level", logLevelLowerCase)
+		err := fmt.Errorf("not a valid slog Level: %q", logLevelLowerCase)
+		logger.Error(err, "CnfCertificationSuiteRun's log level field is invalid",
+			logLevelLoggerKey, logLevelLowerCase)
 		return err
 	}
-	cnfcertificationsuiterunlog.Info("test")
-
 	return nil
 }
 
@@ -112,7 +137,7 @@ func (r *CnfCertificationSuiteRun) ValidateCreate() error {
 //
 //nolint:revive
 func (r *CnfCertificationSuiteRun) ValidateUpdate(old runtime.Object) error {
-	cnfcertificationsuiterunlog.Info("validate update", "name", r.Name)
+	logger.Info("validate update", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
 	return nil
@@ -120,7 +145,7 @@ func (r *CnfCertificationSuiteRun) ValidateUpdate(old runtime.Object) error {
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (r *CnfCertificationSuiteRun) ValidateDelete() error {
-	cnfcertificationsuiterunlog.Info("validate delete", "name", r.Name)
+	logger.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
 	return nil
