@@ -18,11 +18,31 @@ kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
 
 ### Install operator
 
-Deploy the controller to the cluster with the image specified by `IMG`:
+1. Clone Cnf Certification Operator repo:
+    ```sh
+    git clone https://github.com/greyerof/tnf-op.git
+    ```
+    (Note: temporary repo's URL)
 
-```sh
-make deploy IMG=quay.io/testnetworkfunction/cnf-certsuite-operator:<tag>
-```
+2. Deploy the controller to the cluster with the image specified by `IMG`:
+
+    ```sh
+    make deploy IMG=quay.io/testnetworkfunction/cnf-certsuite-operator:<tag>
+    ```
+
+### Test it out
+
+Use our samples to test out the cnf certification operator, with the following steps:
+
+1. In `config/samples/kustomization.yaml` uncomment the following lines:
+    ```sh
+    - extra/cnf-certsuite-configmap.yaml
+    - extra/cnf-certsuite-preflight-secret.yaml
+    ```
+2. Create the sample resources:
+    ```sh
+    oc kustomize ./config/samples/ | oc apply -f -
+    ```
 
 ### Running test suites on the cluster
 
@@ -67,7 +87,7 @@ oc apply -f /path/to/cnfCertificationSuiteRun.yaml
 **Note**: The same config map and secret can be reused
 by different CnfCertificationSuiteRun CR's.
 
-#### 3. Review results
+### Review results
 
 If all of the resources were applied successfully, the cnfcertification suites
 will run on a new created `pod` in the `cnf-certsuite-operator` namespace.
