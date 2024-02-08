@@ -19,9 +19,11 @@ kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
 ### Install operator
 
 1. Clone Cnf Certification Operator repo:
+
     ```sh
     git clone https://github.com/greyerof/tnf-op.git
     ```
+
     (Note: temporary repo's URL)
 
 2. Deploy the controller to the cluster with the image specified by `IMG`:
@@ -35,57 +37,66 @@ kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
 Use our samples to test out the cnf certification operator, with the following steps:
 
 1. In `config/samples/kustomization.yaml` uncomment the following lines:
+
     ```sh
     - extra/cnf-certsuite-configmap.yaml
     - extra/cnf-certsuite-preflight-secret.yaml
     ```
+
 2. Create the sample resources:
+
     ```sh
     oc kustomize ./config/samples/ | oc apply -f -
     ```
 
 ### Running test suites on the cluster
 
-#### 1. Create Resources
+1. Create Resources
 
-In order to use the cnf certification suite operator,
-you'll have to create yaml files for the following resources:
+    In order to use the cnf certification suite operator,
+    you'll have to create yaml files for the following resources:
 
-1. Config map:\
-Containing the cnf certification configuration file
-content under the `tnf_config.yaml` key.\
-(see [CNF Certification configuration description](https://test-network-function.github.io/cnf-certification-test/configuration/))
+    1. Config map:\
+    Containing the cnf certification configuration file
+    content under the `tnf_config.yaml` key.\
+    (see [CNF Certification configuration description](https://test-network-function.github.io/cnf-certification-test/configuration/))
 
-2. Secret:\
-Containing cnf preflight suite credentials
-under the `preflight_dockerconfig.json` key.\
-(see [Preflight Integration description](https://test-network-function.github.io/cnf-certification-test/runtime-env/#disable-intrusive-tests))
+    2. Secret:\
+    Containing cnf preflight suite credentials
+    under the `preflight_dockerconfig.json` key.\
+    (see [Preflight Integration description](https://test-network-function.github.io/cnf-certification-test/runtime-env/#disable-intrusive-tests))
 
-3. CnfCertificationSuiteRun CR:\
-Containing the following Spec fields that has to be filled in:
-    - **labelsFilter**: Wanted label filtering the cnf certification tests suite.
-    - **logLevel**: Wanted log level of cnf certification tests suite run.
-    - **timeout**: Wanted timeout for the the cnf certification tests.
-    - **configMapName**: Name of config map defined at stage 1.
-    - **preflightSecretName**: Name of preflight Secret defined at stage 2.
+    3. CnfCertificationSuiteRun CR:\
+    Containing the following Spec fields that has to be filled in:
+        - **labelsFilter**: Wanted label filtering the cnf certification tests suite.
+        - **logLevel**: Wanted log level of cnf certification tests suite run.
+        - **timeout**: Wanted timeout for the the cnf certification tests.
+        - **configMapName**: Name of the config map defined at stage 1.
+        - **preflightSecretName**: Name of the preflight Secret
+        defined at stage 2.
+        - **enableDataCollection**: Set to "true" to enable data collection,
+        or "false" otherwise\
+        **Note:** Current operator's version **doesn't** support
+        setting enableDataCollection to "true".
 
-    See a [sample CnfCertificationSuiteRun CR](https://github.com/greyerof/tnf-op/blob/main/config/samples/cnf-certifications_v1alpha1_cnfcertificationsuiterun.yaml)
+        See a [sample CnfCertificationSuiteRun CR](https://github.com/greyerof/tnf-op/blob/main/config/samples/cnf-certifications_v1alpha1_cnfcertificationsuiterun.yaml)
 
-**Note:** All resources have to be defined under the `cnf-certsuite-operator` namespace.
+    **Note:** All resources have to be defined
+    under the `cnf-certsuite-operator` namespace.
 
-#### 2. Apply resources into the cluster
+2. Apply resources into the cluster
 
-After creating all the yaml files for required resources,
-use the following commands to apply them into the cluster:
+    After creating all the yaml files for required resources,
+    use the following commands to apply them into the cluster:
 
-```sh
-oc apply -f /path/to/config/map.yaml
-oc apply -f /path/to/preflight/secret.yaml
-oc apply -f /path/to/cnfCertificationSuiteRun.yaml
-```
+    ```sh
+    oc apply -f /path/to/config/map.yaml
+    oc apply -f /path/to/preflight/secret.yaml
+    oc apply -f /path/to/cnfCertificationSuiteRun.yaml
+    ```
 
-**Note**: The same config map and secret can be reused
-by different CnfCertificationSuiteRun CR's.
+    **Note**: The same config map and secret can be reused
+    by different CnfCertificationSuiteRun CR's.
 
 ### Review results
 
