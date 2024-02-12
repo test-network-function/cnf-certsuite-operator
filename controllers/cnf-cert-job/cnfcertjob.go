@@ -14,47 +14,26 @@ const (
 	clusterAccessServiceAccountName = "cnf-certsuite-cluster-access"
 )
 
-type Config struct {
-	PodName                string
-	Namespace              string
-	CertSuiteConfigRunName string
-	LabelsFilter           string
-	LogLevel               string
-	TimeOut                string
-	ConfigMapName          string
-	PreflightSecretName    string
-	SideCarAppImage        string
-}
+func New(options ...func(*corev1.Pod)) *corev1.Pod {
+	jobPod := newInitialJobPod()
 
-func NewConfig(podName, namespace, certSuiteConfigRunName, labelsFilter, logLevel, timeOut, configMapName, preflightSecretName, sideCarAppImage string) *Config {
-	return &Config{
-		PodName:                podName,
-		Namespace:              namespace,
-		CertSuiteConfigRunName: certSuiteConfigRunName,
-		LabelsFilter:           labelsFilter,
-		LogLevel:               logLevel,
-		TimeOut:                timeOut,
-		ConfigMapName:          configMapName,
-		PreflightSecretName:    preflightSecretName,
-		SideCarAppImage:        sideCarAppImage,
+	for _, o := range options {
+		o(jobPod)
 	}
+	return jobPod
 }
 
 //nolint:funlen
-func New(config *Config) *corev1.Pod {
+func newInitialJobPod() *corev1.Pod {
 	return &corev1.Pod{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.PodName,
-			Namespace: config.Namespace,
-		},
+		TypeMeta:   metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{},
 		Spec: corev1.PodSpec{
 			ServiceAccountName: clusterAccessServiceAccountName,
 			RestartPolicy:      "Never",
 			Containers: []corev1.Container{
 				{
-					Name:  definitions.CnfCertSuiteSidecarContainerName,
-					Image: config.SideCarAppImage,
+					Name: definitions.CnfCertSuiteSidecarContainerName,
 					Env: []corev1.EnvVar{
 						{
 							Name: "MY_POD_NAME",
@@ -76,10 +55,6 @@ func New(config *Config) *corev1.Pod {
 							Name:  definitions.SideCarResultsFolderEnvVar,
 							Value: definitions.CnfCertSuiteResultsFolder,
 						},
-						{
-							Name:  "RUN_CR_NAME",
-							Value: config.CertSuiteConfigRunName,
-						},
 					},
 					ImagePullPolicy: "IfNotPresent",
 					VolumeMounts: []corev1.VolumeMount{
@@ -94,12 +69,8 @@ func New(config *Config) *corev1.Pod {
 					Name:    definitions.CnfCertSuiteContainerName,
 					Image:   "quay.io/testnetworkfunction/cnf-certification-test:unstable",
 					Command: []string{"./run-cnf-suites.sh"},
-					Args:    []string{"-l", config.LabelsFilter, "-o", definitions.CnfCertSuiteResultsFolder},
+					Args:    []string{"-o", definitions.CnfCertSuiteResultsFolder},
 					Env: []corev1.EnvVar{
-						{
-							Name:  "TNF_LOG_LEVEL",
-							Value: config.LogLevel,
-						},
 						{
 							Name:  "PFLT_DOCKERCONFIG",
 							Value: definitions.PreflightDockerConfigFilePath,
@@ -111,10 +82,6 @@ func New(config *Config) *corev1.Pod {
 						{
 							Name:  "TNF_NON_INTRUSIVE_ONLY",
 							Value: "true",
-						},
-						{
-							Name:  "TIMEOUT",
-							Value: config.TimeOut,
 						},
 					},
 					ImagePullPolicy: "Always",
@@ -143,26 +110,83 @@ func New(config *Config) *corev1.Pod {
 						EmptyDir: &corev1.EmptyDirVolumeSource{},
 					},
 				},
-				{
-					Name: "cnf-certsuite-config",
-					VolumeSource: corev1.VolumeSource{
-						ConfigMap: &corev1.ConfigMapVolumeSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: config.ConfigMapName,
-							},
-						},
-					},
-				},
-				{
-					Name: "cnf-certsuite-preflight-dockerconfig",
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: config.PreflightSecretName,
-						},
-					},
-				},
 			},
 		},
 		Status: corev1.PodStatus{},
+	}
+}
+
+func WithPodName(podName string) func(*corev1.Pod) {
+	return func(p *corev1.Pod) {
+		p.ObjectMeta.Name = podName
+	}
+}
+
+func WithNamespace(namespace string) func(*corev1.Pod) {
+	return func(p *corev1.Pod) {
+		p.ObjectMeta.Namespace = namespace
+	}
+}
+
+func WithCertSuiteConfigRunName(certSuiteConfigRunName string) func(*corev1.Pod) {
+	return func(p *corev1.Pod) {
+		envVar := corev1.EnvVar{Name: "RUN_CR_NAME", Value: certSuiteConfigRunName}
+		p.Spec.Containers[0].Env = append(p.Spec.Containers[0].Env, envVar)
+	}
+}
+
+func WithLabelsFilter(labelsFilter string) func(*corev1.Pod) {
+	return func(p *corev1.Pod) {
+		p.Spec.Containers[1].Args = append(p.Spec.Containers[1].Args, "-l", labelsFilter)
+	}
+}
+
+func WithLogLevel(loglevel string) func(*corev1.Pod) {
+	return func(p *corev1.Pod) {
+		envVar := corev1.EnvVar{Name: "TNF_LOG_LEVEL", Value: loglevel}
+		p.Spec.Containers[1].Env = append(p.Spec.Containers[1].Env, envVar)
+	}
+}
+
+func WithTimeOut(timeout string) func(*corev1.Pod) {
+	return func(p *corev1.Pod) {
+		envVar := corev1.EnvVar{Name: "TIMEOUT", Value: timeout}
+		p.Spec.Containers[1].Env = append(p.Spec.Containers[1].Env, envVar)
+	}
+}
+
+func WithConfigMap(configMapName string) func(*corev1.Pod) {
+	return func(p *corev1.Pod) {
+		Volume := corev1.Volume{
+			Name: "cnf-certsuite-config",
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: configMapName,
+					},
+				},
+			},
+		}
+		p.Spec.Volumes = append(p.Spec.Volumes, Volume)
+	}
+}
+
+func WithPreflightSecret(preflightSecretName string) func(*corev1.Pod) {
+	return func(p *corev1.Pod) {
+		Volume := corev1.Volume{
+			Name: "cnf-certsuite-preflight-dockerconfig",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: preflightSecretName,
+				},
+			},
+		}
+		p.Spec.Volumes = append(p.Spec.Volumes, Volume)
+	}
+}
+
+func WithSideCarApp(sideCarAppImage string) func(*corev1.Pod) {
+	return func(p *corev1.Pod) {
+		p.Spec.Containers[0].Image = sideCarAppImage
 	}
 }

@@ -233,17 +233,17 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 	// Launch the pod with the CNF Cert Suite container plus the sidecar container to fetch the results.
 	r.updateJobPhaseStatus(&cnfrun, "CreatingCertSuiteJob")
 	logger.Info("Creating CNF Cert job pod")
-	config := cnfcertjob.NewConfig(
-		podName,
-		req.Namespace,
-		cnfrun.Name,
-		cnfrun.Spec.LabelsFilter,
-		cnfrun.Spec.LogLevel,
-		cnfrun.Spec.TimeOut,
-		cnfrun.Spec.ConfigMapName,
-		cnfrun.Spec.PreflightSecretName,
-		sideCarImage)
-	cnfCertJobPod := cnfcertjob.New(config)
+	cnfCertJobPod := cnfcertjob.New(
+		cnfcertjob.WithPodName(podName),
+		cnfcertjob.WithNamespace(req.Namespace),
+		cnfcertjob.WithCertSuiteConfigRunName(cnfrun.Name),
+		cnfcertjob.WithLabelsFilter(cnfrun.Spec.LabelsFilter),
+		cnfcertjob.WithLogLevel(cnfrun.Spec.LogLevel),
+		cnfcertjob.WithTimeOut(cnfrun.Spec.TimeOut),
+		cnfcertjob.WithConfigMap(cnfrun.Spec.ConfigMapName),
+		cnfcertjob.WithPreflightSecret(cnfrun.Spec.PreflightSecretName),
+		cnfcertjob.WithSideCarApp(sideCarImage),
+	)
 
 	err := r.Create(ctx, cnfCertJobPod)
 	if err != nil {
