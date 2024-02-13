@@ -197,6 +197,8 @@ func (r *CnfCertificationSuiteRunReconciler) updateRunCrStatusReportName(ctx con
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
+//
+//nolint:funlen
 func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger.Info("Reconciling CnfCertificationSuiteRun CRD.")
 
@@ -234,7 +236,7 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 	// Launch the pod with the CNF Cert Suite container plus the sidecar container to fetch the results.
 	r.updateJobPhaseStatus(&cnfrun, "CreatingCertSuiteJob")
 	logger.Info("Creating CNF Cert job pod")
-	cnfCertJobPod := cnfcertjob.New(
+	cnfCertJobPod, err := cnfcertjob.New(
 		cnfcertjob.WithPodName(podName),
 		cnfcertjob.WithNamespace(req.Namespace),
 		cnfcertjob.WithCertSuiteConfigRunName(cnfrun.Name),
@@ -245,8 +247,13 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 		cnfcertjob.WithPreflightSecret(cnfrun.Spec.PreflightSecretName),
 		cnfcertjob.WithSideCarApp(sideCarImage),
 	)
+	if err != nil {
+		logger.Errorf("Failed to create CNF Cert job pod: %w", err)
+		r.updateJobPhaseStatus(&cnfrun, "FailedToCreateCertSuitePod")
+		return ctrl.Result{}, nil
+	}
 
-	err := r.Create(ctx, cnfCertJobPod)
+	err = r.Create(ctx, cnfCertJobPod)
 	if err != nil {
 		logger.Errorf("Failed to create CNF Cert job pod: %w", err)
 		r.updateJobPhaseStatus(&cnfrun, "FailedToDeployCertSuitePod")

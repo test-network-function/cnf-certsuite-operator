@@ -1,6 +1,8 @@
 package cnfcertjob
 
 import (
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -14,13 +16,16 @@ const (
 	clusterAccessServiceAccountName = "cnf-certsuite-cluster-access"
 )
 
-func New(options ...func(*corev1.Pod)) *corev1.Pod {
+func New(options ...func(*corev1.Pod) error) (*corev1.Pod, error) {
 	jobPod := newInitialJobPod()
 
 	for _, o := range options {
-		o(jobPod)
+		err := o(jobPod)
+		if err != nil {
+			return nil, err
+		}
 	}
-	return jobPod
+	return jobPod, nil
 }
 
 //nolint:funlen
@@ -116,47 +121,69 @@ func newInitialJobPod() *corev1.Pod {
 	}
 }
 
-func WithPodName(podName string) func(*corev1.Pod) {
-	return func(p *corev1.Pod) {
+func WithPodName(podName string) func(*corev1.Pod) error {
+	return func(p *corev1.Pod) error {
 		p.ObjectMeta.Name = podName
+		return nil
 	}
 }
 
-func WithNamespace(namespace string) func(*corev1.Pod) {
-	return func(p *corev1.Pod) {
+func WithNamespace(namespace string) func(*corev1.Pod) error {
+	return func(p *corev1.Pod) error {
 		p.ObjectMeta.Namespace = namespace
+		return nil
 	}
 }
 
-func WithCertSuiteConfigRunName(certSuiteConfigRunName string) func(*corev1.Pod) {
-	return func(p *corev1.Pod) {
+func WithCertSuiteConfigRunName(certSuiteConfigRunName string) func(*corev1.Pod) error {
+	return func(p *corev1.Pod) error {
 		envVar := corev1.EnvVar{Name: "RUN_CR_NAME", Value: certSuiteConfigRunName}
-		p.Spec.Containers[0].Env = append(p.Spec.Containers[0].Env, envVar)
+		sideCarContainer := getSideCarAppContainer(p)
+		if sideCarContainer == nil {
+			return fmt.Errorf("side Car app Container is not found in pod %s", p.Name)
+		}
+		sideCarContainer.Env = append(sideCarContainer.Env, envVar)
+		return nil
 	}
 }
 
-func WithLabelsFilter(labelsFilter string) func(*corev1.Pod) {
-	return func(p *corev1.Pod) {
-		p.Spec.Containers[1].Args = append(p.Spec.Containers[1].Args, "-l", labelsFilter)
+func WithLabelsFilter(labelsFilter string) func(*corev1.Pod) error {
+	return func(p *corev1.Pod) error {
+		cnfCertSuiteContainer := getCnfCertSuiteContainer(p)
+		if cnfCertSuiteContainer == nil {
+			return fmt.Errorf("cnf cert suite Container is not found in pod %s", p.Name)
+		}
+		cnfCertSuiteContainer.Args = append(cnfCertSuiteContainer.Args, "-l", labelsFilter)
+		return nil
 	}
 }
 
-func WithLogLevel(loglevel string) func(*corev1.Pod) {
-	return func(p *corev1.Pod) {
+func WithLogLevel(loglevel string) func(*corev1.Pod) error {
+	return func(p *corev1.Pod) error {
 		envVar := corev1.EnvVar{Name: "TNF_LOG_LEVEL", Value: loglevel}
-		p.Spec.Containers[1].Env = append(p.Spec.Containers[1].Env, envVar)
+		cnfCertSuiteContainer := getCnfCertSuiteContainer(p)
+		if cnfCertSuiteContainer == nil {
+			return fmt.Errorf("cnf cert suite Container is not found in pod %s", p.Name)
+		}
+		cnfCertSuiteContainer.Env = append(cnfCertSuiteContainer.Env, envVar)
+		return nil
 	}
 }
 
-func WithTimeOut(timeout string) func(*corev1.Pod) {
-	return func(p *corev1.Pod) {
+func WithTimeOut(timeout string) func(*corev1.Pod) error {
+	return func(p *corev1.Pod) error {
 		envVar := corev1.EnvVar{Name: "TIMEOUT", Value: timeout}
-		p.Spec.Containers[1].Env = append(p.Spec.Containers[1].Env, envVar)
+		cnfCertSuiteContainer := getCnfCertSuiteContainer(p)
+		if cnfCertSuiteContainer == nil {
+			return fmt.Errorf("cnf cert suite Container is not found in pod %s", p.Name)
+		}
+		cnfCertSuiteContainer.Env = append(cnfCertSuiteContainer.Env, envVar)
+		return nil
 	}
 }
 
-func WithConfigMap(configMapName string) func(*corev1.Pod) {
-	return func(p *corev1.Pod) {
+func WithConfigMap(configMapName string) func(*corev1.Pod) error {
+	return func(p *corev1.Pod) error {
 		Volume := corev1.Volume{
 			Name: "cnf-certsuite-config",
 			VolumeSource: corev1.VolumeSource{
@@ -168,11 +195,12 @@ func WithConfigMap(configMapName string) func(*corev1.Pod) {
 			},
 		}
 		p.Spec.Volumes = append(p.Spec.Volumes, Volume)
+		return nil
 	}
 }
 
-func WithPreflightSecret(preflightSecretName string) func(*corev1.Pod) {
-	return func(p *corev1.Pod) {
+func WithPreflightSecret(preflightSecretName string) func(*corev1.Pod) error {
+	return func(p *corev1.Pod) error {
 		Volume := corev1.Volume{
 			Name: "cnf-certsuite-preflight-dockerconfig",
 			VolumeSource: corev1.VolumeSource{
@@ -182,11 +210,35 @@ func WithPreflightSecret(preflightSecretName string) func(*corev1.Pod) {
 			},
 		}
 		p.Spec.Volumes = append(p.Spec.Volumes, Volume)
+		return nil
 	}
 }
 
-func WithSideCarApp(sideCarAppImage string) func(*corev1.Pod) {
-	return func(p *corev1.Pod) {
-		p.Spec.Containers[0].Image = sideCarAppImage
+func WithSideCarApp(sideCarAppImage string) func(*corev1.Pod) error {
+	return func(p *corev1.Pod) error {
+		sideCarContainer := getSideCarAppContainer(p)
+		if sideCarContainer == nil {
+			return fmt.Errorf("side Car app Container is not found in pod %s", p.Name)
+		}
+		sideCarContainer.Image = sideCarAppImage
+		return nil
 	}
+}
+
+func getSideCarAppContainer(p *corev1.Pod) *corev1.Container {
+	for i := range p.Spec.Containers {
+		if p.Spec.Containers[i].Name == definitions.CnfCertSuiteSidecarContainerName {
+			return &p.Spec.Containers[i]
+		}
+	}
+	return nil
+}
+
+func getCnfCertSuiteContainer(p *corev1.Pod) *corev1.Container {
+	for i := range p.Spec.Containers {
+		if p.Spec.Containers[i].Name == definitions.CnfCertSuiteContainerName {
+			return &p.Spec.Containers[i]
+		}
+	}
+	return nil
 }
