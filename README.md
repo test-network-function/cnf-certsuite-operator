@@ -8,6 +8,35 @@
 Kubernetes/Openshift Operator (scaffolded with operator-sdk) running the
 [CNF Certification Suite Container](https://github.com/test-network-function/cnf-certification-test).
 
+The CNF Certification Suites provide a set of test cases for the
+Containerized Network Functions/Cloud Native Functions (CNFs) to verify if
+best practices for deployment on Red Hat OpenShift clusters are followed.
+
+### How does it work?
+
+The Operator uses a CR representing a CNF Certification Suites run.
+In order to run the suites, such "run" CR has to be created together
+with a Config Map containing the cnf certification suites configuration,
+and a Secret containing the preflight suite credentials.\
+
+See resources relationship diagram:
+
+![run config](doc/uml/run_config.png)
+
+When the CR is deployed, a new pod with two containers is created:
+
+1. Container built with the cnf certification image in order to run the suites.
+2. Container which creates a new CR representing the CNF Certification suites
+results based on results claim file created by the previous container.
+
+    See container's flow in the following diagram:
+
+    ![side car](doc/uml/side_car.png)
+
+**See diagram summarizing the process:**
+
+![Use Case Run](doc/uml/use_case_run.png)
+
 ## Getting Started
 
 You’ll need a Kubernetes cluster to run against.
@@ -26,7 +55,13 @@ kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
 
     (Note: temporary repo's URL)
 
-2. Deploy the controller to the cluster with the image specified by `IMG`:
+2. Build the operator image under `IMG` name:
+
+    ```sh
+    make build-docker IMG=quay.io/testnetworkfunction/cnf-certsuite-operator:<tag>
+    ```
+
+3. Deploy the controller to the cluster with the image specified by `IMG`:
 
     ```sh
     make deploy IMG=quay.io/testnetworkfunction/cnf-certsuite-operator:<tag>
@@ -104,7 +139,20 @@ If all of the resources were applied successfully, the cnfcertification suites
 will run on a new created `pod` in the `cnf-certsuite-operator` namespace.
 
 When the pod is completed, a new `CnfCertificationSuiteReport` will be created
-under the same namespace. Run the following command to ensure its creation:
+under the same namespace.
+CNF certification suites results will be stored in the CR's Status different fields:
+
+- Results: For every test case, contains its result and logs.
+If the the result is "skipped" or "failed" contains also the skip\failure reason.
+
+    See example:
+
+    ![report status result example](doc/examples/report_status_result_example.png)
+
+- Summary: Summarize the total number of tests by their results.
+- Verdict: Specifies the overall result of the CNF certificattion suites run.
+
+Run the following command to ensure its creation:
 
 ```sh
 oc get cnfcertificationsuitereports.cnf-certifications.redhat.com -n cnf-certsuite-operator
