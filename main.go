@@ -129,6 +129,10 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "CnfCertificationSuiteRun")
 		os.Exit(1)
 	}
+	if err = (&cnfcertificationsv1alpha1.CnfCertificationSuiteRun{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "CnfCertificationSuiteRun")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:builder
 
 	setUpChecks(mgr)
