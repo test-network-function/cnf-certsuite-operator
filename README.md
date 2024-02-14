@@ -47,24 +47,50 @@ kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
 
 ### Install operator
 
-1. Clone Cnf Certification Operator repo:
+Clone Cnf Certification Operator repo:
+
+```sh
+git clone https://github.com/greyerof/tnf-op.git
+```
+
+(Note: temporary repo's URL)
+
+#### Option 1: Use a your own registry account
+
+1. Build and upload the controller image to your registry account:
 
     ```sh
-    git clone https://github.com/greyerof/tnf-op.git
+    make docker-build docker-push IMG=<your-registry.com>/<your-repo>/cnf-certsuite-operator:<version>
     ```
 
-    (Note: temporary repo's URL)
-
-2. Build the operator image under `IMG` name:
+2. Build and upload the side car image to your registry account:
 
     ```sh
-    make build-docker IMG=quay.io/testnetworkfunction/cnf-certsuite-operator:<tag>
+    docker build -f cnf-cert-sidecar/Dockerfile \
+    -t <your-registry.com>/<your-repo>/cnf-certsuite-operator-sidecar:<version> .
     ```
 
-3. Deploy the controller to the cluster with the image specified by `IMG`:
+3. Deploy the operator, using the previously uploaded controller image,
+ and the built side car image:
 
     ```sh
-    make deploy IMG=quay.io/testnetworkfunction/cnf-certsuite-operator:<tag>
+    make deploy IMG=<your-registry.com>/<your-repo>/cnf-certsuite-operator:<version>\
+    SIDECAR_APP_IMG=<your-registry.com>/<your-repo>/
+    cnf-certsuite-operator-sidecar:<version>
+    ```
+
+#### Option 2: Use local images
+
+1. Build controller and side car images:
+
+    ```sh
+    scripts/ci/build.sh IMG=<your-cnf-certsuite-operator-image-name> SIDECAR_IMG=<your-sidecar-app-image-name>
+    ```
+
+2. Deploy previously built images by preloading them into the kind cluster's nodes:
+
+    ```sh
+    scripts/ci/deploy.sh IMG=<your-cnf-certsuite-operator-image-name> SIDECAR_IMG=<your-sidecar-app-image-name>
     ```
 
 ### Test it out
