@@ -17,7 +17,7 @@ set -o xtrace
 set -o errexit
 
 DEFAULT_TEST_VERSION="0.0.1-test"
-DEFAULT_SIDECAR_IMG="local-test-sidecar-image:v$DEFAULT_TEST_VERSION"
+DEFAULT_SIDECAR_IMG="ci-cnf-op-sidecar:v$DEFAULT_TEST_VERSION"
 DEFAULT_IMG="ci-cnf-op:v$DEFAULT_TEST_VERSION"
 
 export VERSION="${VERSION:-$DEFAULT_TEST_VERSION}"
