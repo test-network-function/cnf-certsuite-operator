@@ -14,10 +14,16 @@ best practices for deployment on Red Hat OpenShift clusters are followed.
 
 ### How does it work?
 
-The Operator uses a CR representing a CNF Certification Suites run.
-In order to run the suites, such "run" CR has to be created together
-with a Config Map containing the cnf certification suites configuration,
+The Operator registers two CRDs in the cluster:
+`CnfCertificationSuiteRun` and `CnfCertificationSuiteReport`,
+also informally referred as Run and Report CRDs.
+
+In order to fire up the CNF Certification Suite, the user must create
+a CnfCertificationSuiteRun CR, which has to be created with a Config Map
+containing the cnf certification suites configuration,
 and a Secret containing the preflight suite credentials.
+**Note:** All resources mentioned above should be created in the operator's
+installation namespace (by default `cnf-certsuite-operator`)
 
 See resources relationship diagram:
 
@@ -92,11 +98,19 @@ kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
 
 #### Option 2: Use local images
 
-1. Export images environment variables:
+1. Export images environment variables (optional):
 
     ```sh
     export IMG=<your-cnf-certsuite-operator-image-name>
     export SIDECAR_IMG=<your-sidecar-app-image-name>
+    ```
+
+    **Note**: if the images aren't provided,
+    scripts of next steps will use default images:
+
+    ```sh
+    IMG=ci-cnf-op:v0.0.1-test
+    SIDECAR_IMG=ci-cnf-op-sidecar:v0.0.1-test
     ```
 
 2. Build controller and side car images:
@@ -119,7 +133,11 @@ Use our samples to test out the cnf certification operator, with the following c
 make deploy-samples
 ```
 
-### Running test suites on the cluster
+**Note**: Current sample CnfCertificationSuiteRun CR configure
+the CNF Certification Suite to run the "observability" test suite only.
+It can be modified by changing manually the `labelsFilter` of the [sample CR](https://github.com/greyerof/tnf-op/blob/main/config/samples/cnf-certifications_v1alpha1_cnfcertificationsuiterun.yaml).
+
+### How to customize the CNF Certification Suite run
 
 1. Create Resources
 
@@ -152,9 +170,6 @@ make deploy-samples
 
         See a [sample CnfCertificationSuiteRun CR](https://github.com/greyerof/tnf-op/blob/main/config/samples/cnf-certifications_v1alpha1_cnfcertificationsuiterun.yaml)
 
-    **Note:** All resources have to be defined
-    under the `cnf-certsuite-operator` namespace.
-
 2. Apply resources into the cluster
 
     After creating all the yaml files for required resources,
@@ -173,17 +188,23 @@ make deploy-samples
 
 If all of the resources were applied successfully, the cnf certification suites
 will run on a new created `pod` in the `cnf-certsuite-operator` namespace.
+The pod has the name with the form `cnf-job-run-N`:
+
+<!-- markdownlint-disable -->
+```sh
+$ oc get pods -n cnf-certsuite-operator 
+NAME                                                READY   STATUS      RESTARTS   AGE
+cnf-certsuite-controller-manager-6c6bb6d965-jslmd   2/2     Running     0          21h
+cnf-job-run-1                                       0/2     Completed   0          21h
+```
+<!-- markdownlint-enable -->
 
 Check whether the pod creation and the cnf certification suites run were successful
-by checking CnfCertificationSuiteRun CR's status, using the following command:
-
-```sh
-oc get cnfcertificationsuiteruns.cnf-certifications.redhat.com -n cnf-certsuite-operator
-```
-
+by checking CnfCertificationSuiteRun CR's status.
 In the successful case, expect to see the following status:
 
 ```sh
+$ oc get cnfcertificationsuiteruns.cnf-certifications.redhat.com -n cnf-certsuite-operator
 NAME                              AGE   STATUS
 cnfcertificationsuiterun-sample   50m   CertSuiteFinished
 ```
@@ -197,42 +218,33 @@ If the the result is "skipped" or "failed" contains also the skip\failure reason
 
     See example:
 
+    <!-- markdownlint-disable -->
     ```sh
-    Logs:            INFO  [Feb 15 10:46:43.050] [check.go: 263] [observability-crd-status]
-    Running check (labels: [common observability-crd-status observability]) 
-    INFO  [Feb 15 10:46:43.050] [suite.go: 144] [observability-crd-status] 
-    Testing CRD: crdexamples.test-network-function.com
-    INFO  [Feb 15 10:46:43.050] [suite.go: 153] [observability-crd-status] 
-    CRD: crdexamples.test-network-function.com, version: v1 has a status subresource
-    INFO  [Feb 15 10:46:43.050] [checksdb.go: 115] [observability-crd-status] 
-    Recording result "PASSED", 
-    claimID: {Id:observability-crd-status Suite:observability Tags:common}
-
-    Result:          passed
-    Test Case Name:  observability-crd-status
-    Logs: INFO  [Feb 15 10:46:43.025] [checksgroup.go: 83]
-    [access-control-net-raw-capability-check] 
-    Skipping check access-control-net-raw-capability-check, reason: no matching labels
-    INFO  [Feb 15 10:46:43.026] [checksdb.go: 115]
-    [access-control-net-raw-capability-check] Recording result "SKIPPED",
-    claimID: {Id:access-control-net-raw-capability-check Suite:access-control Tags:telco}
-
-    Reason:          no matching labels
-    Result:          skipped
-    Test Case Name:  access-control-net-raw-capability-check
-    Logs:            INFO  [Feb 15 10:46:43.025] [checksgroup.go: 83]
-    [access-control-security-context-non-root-user-check] Skipping
-    checkaccess-control-security-context-non-root-user-check,
-    reason: no matching labels
-    INFO  [Feb 15 10:46:43.026] [checksdb.go: 115]
-    [access-control-security-context-non-root-user-check] Recording result "SKIPPED",
-    claimID: {Id:access-control-security-context-non-root-user-check Suite
-    :access-control Tags:common}
-
-    Reason:          no matching labels
-    Result:          skipped
-    Test Case Name:  access-control-security-context-non-root-user-check
+    status:
+        results:
+            - logs: |
+                INFO  [Feb 15 13:05:50.749] [check.go: 263] [observability-pod-disruption-budget] Running check (labels: [common observability-pod-disruption-budget observability])
+                INFO  [Feb 15 13:05:50.749] [suite.go: 193] [observability-pod-disruption-budget] Testing Deployment "deployment: test ns: tnf"
+                INFO  [Feb 15 13:05:50.749] [suite.go: 206] [observability-pod-disruption-budget] PDB "test-pdb-min" is valid for Deployment: "test"
+                INFO  [Feb 15 13:05:50.749] [suite.go: 224] [observability-pod-disruption-budget] Testing StatefulSet "statefulset: test ns: tnf"
+                INFO  [Feb 15 13:05:50.749] [suite.go: 237] [observability-pod-disruption-budget] PDB "test-pdb-max" is valid for StatefulSet: "test"
+                INFO  [Feb 15 13:05:50.749] [checksdb.go: 115] [observability-pod-disruption-budget] Recording result "PASSED", claimID: {Id:observability-pod-disruption-budget Suite:observability Tags:common}
+                result: passed
+                testCaseName: observability-pod-disruption-budget
+            - logs: |
+                INFO  [Feb 15 13:05:50.723] [checksgroup.go: 83] [operator-install-source] Skipping check operator-install-source, reason: no matching labels
+                INFO  [Feb 15 13:05:50.723] [checksdb.go: 115] [operator-install-source] Recording result "SKIPPED", claimID: {Id:operator-install-source Suite:operator Tags:common}
+                reason: no matching labels
+                result: skipped
+                testCaseName: operator-install-source
+            - logs: |
+                INFO  [Feb 15 13:05:50.749] [checksgroup.go: 83] [affiliated-certification-helmchart-is-certified] Skipping check affiliated-certification-helmchart-is-certified, reason: no matching labels
+                INFO  [Feb 15 13:05:50.749] [checksdb.go: 115] [affiliated-certification-helmchart-is-certified] Recording result "SKIPPED", claimID: {Id:affiliated-certification-helmchart-is-certified Suite:affiliated-certification Tags:common}
+                reason: no matching labels
+                result: skipped
+                testCaseName: affiliated-certification-helmchart-is-certified
     ```
+    <!-- markdownlint-enable -->
 
 - Summary: Summarize the total number of tests by their results.
 - Verdict: Specifies the overall result of the CNF certificattion suites run.\
@@ -241,7 +253,9 @@ Poissible verdicts: "pass", "skip", "fail", "error".
 Run the following command to ensure its creation:
 
 ```sh
-oc get cnfcertificationsuitereports.cnf-certifications.redhat.com -n cnf-certsuite-operator
+$ oc get cnfcertificationsuitereports.cnf-certifications.redhat.com -n cnf-certsuite-operator
+NAME                   AGE
+cnf-job-run-1-report   21h
 ```
 
 To review the test results describe the created
