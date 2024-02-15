@@ -49,6 +49,7 @@ endif
 
 # Image URL to use all building/pushing image targets
 IMG ?= controller:latest
+SIDECAR_IMG ?= sidecar:latest
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.26.0
 
@@ -171,7 +172,9 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 
 .PHONY: deploy
 deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	cd config/manager \
+	  && $(KUSTOMIZE) edit set image controller=${IMG} \
+      && $(KUSTOMIZE) edit add patch --kind Deployment --patch "[{\"op\": \"replace\", \"path\": \"/spec/template/spec/containers/0/env/1\", \"value\": {\"name\": \"SIDECAR_APP_IMG\", \"value\": \"${SIDECAR_IMG}\"} }]"
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 .PHONY: undeploy
@@ -272,3 +275,10 @@ catalog-build: opm ## Build a catalog image.
 .PHONY: catalog-push
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
+
+.PHONY: deploy-samples
+deploy-samples: ## Deploy the sample CR, configmap and secret in the cluster.
+	cd config/samples \
+	  && $(KUSTOMIZE) edit add resource "extra/cnf-certsuite-configmap.yaml" \
+	  && $(KUSTOMIZE) edit add resource "extra/cnf-certsuite-preflight-secret.yaml"
+	kubectl kustomize config/samples | oc apply -f -

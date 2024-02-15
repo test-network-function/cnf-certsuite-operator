@@ -22,10 +22,7 @@ DEFAULT_CNF_CERTSUITE_OPERATOR_NAMESPACE="cnf-certsuite-operator"
 CNF_CERTSUITE_OPERATOR_NAMESPACE=${CNF_CERTSUITE_OPERATOR_NAMESPACE:-$DEFAULT_CNF_CERTSUITE_OPERATOR_NAMESPACE}
 
 # Load samples, patching the kustomization.yaml to include the configmap and the preflight dockerconfig.
-pushd config/samples
-  ../../bin/kustomize edit add resource "extra/cnf-certsuite-configmap.yaml"
-  ../../bin/kustomize edit add resource "extra/cnf-certsuite-preflight-secret.yaml"
-popd
+make deploy-samples
 
 # Apply/create the sample CR.
 oc kustomize config/samples | oc apply -f -

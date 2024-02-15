@@ -36,11 +36,6 @@ docker build --no-cache -t "${SIDECAR_IMG}" -f cnf-cert-sidecar/Dockerfile .
 # Local install kustomize app that is needed to edit/patch the kustomization.yaml
 make kustomize
 
-# step: Add env var to the controller's container to set the sidecar image app that was built right before
-pushd config/manager
-  ../../bin/kustomize edit add patch --kind Deployment --patch "[{\"op\": \"replace\", \"path\": \"/spec/template/spec/containers/0/env/1\", \"value\": {\"name\": \"SIDECAR_APP_IMG\", \"value\": \"${SIDECAR_IMG}\"} }]"
-popd
-
 # step: Build docker image for the controller. This will use IMG pointing to local docker image for the controller, which
 #       will be pushed to kind with "docker load docker-image $IMG"
 make docker-build
