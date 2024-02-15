@@ -35,10 +35,6 @@ When the CR is deployed, a new pod with two containers is created:
 2. Container which creates a new CR representing the CNF Certification suites
 results based on results claim file created by the previous container.
 
-    See container's flow in the following diagram:
-
-    ![side car](doc/uml/side_car.png)
-
 **See diagram summarizing the process:**
 
 ![Use Case Run](doc/uml/use_case_run.png)
@@ -53,7 +49,7 @@ kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
 
 ### Install operator
 
-#### Iniital steps
+#### Initial steps
 
 1. Clone Cnf Certification Operator repo:
 
@@ -133,7 +129,7 @@ Use our samples to test out the cnf certification operator, with the following c
 make deploy-samples
 ```
 
-**Note**: Current sample CnfCertificationSuiteRun CR configure
+**Note**: Current sample CnfCertificationSuiteRun CR configures
 the CNF Certification Suite to run the "observability" test suite only.
 It can be modified by changing manually the `labelsFilter` of the [sample CR](https://github.com/greyerof/tnf-op/blob/main/config/samples/cnf-certifications_v1alpha1_cnfcertificationsuiterun.yaml).
 
