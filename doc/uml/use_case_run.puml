@@ -1,12 +1,12 @@
 @startuml "Run sequence"
 User -> Cluster : Creates ConfigMap with CNF config
 User -> Cluster: Creates Preflight Docker Config Secret
-User -> Cluster : Creates CnfCertSuiteCertificationRun CR
+User -> Cluster : Creates CnfCertificationSuiteRun CR
 Cluster -> "CNF Cert Suite Operator" : New CR available
 "CNF Cert Suite Operator" -> Cluster : Creates CNF Cert Pod
 hnote over Cluster : CNF Cert Pod runs the CNF Cert Suite
 activate Cluster
-Cluster -> Cluster : CNF Cert Pod creates CnfCertSuiteCertificationReport CR
+Cluster -> Cluster : CNF Cert Pod creates CnfCertificationSuiteReport CR
 deactivate Cluster
-User -> Cluster : Check results from CnfCertSuiteCertificationReport
+User -> Cluster : Check results from CnfCertificationSuiteReport
 @enduml
