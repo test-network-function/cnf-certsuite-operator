@@ -6,6 +6,8 @@ metadata:
   creationTimestamp: null
   name: cnfcertificationsuiteruns.cnf-certifications.redhat.com
 spec:
+  conversion:
+    strategy: None
   group: cnf-certifications.redhat.com
   names:
     kind: CnfCertificationSuiteRun
