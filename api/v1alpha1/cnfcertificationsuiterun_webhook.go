@@ -97,25 +97,53 @@ func (r *CnfCertificationSuiteRun) ValidateCreate() error {
 
 func (r *CnfCertificationSuiteRun) validateConfigMap() error {
 	configMap := &v1.ConfigMap{}
+
+	// Return an error if config map is not found by name and ns, or field is empty
 	err := c.Get(context.TODO(), types.NamespacedName{Name: r.Spec.ConfigMapName, Namespace: r.Namespace}, configMap)
 	if err != nil {
 		logger.Error(err, "CnfCertificationSuiteRun's config map name field is invalid",
 			configMapLoggerKey, r.Spec.ConfigMapName)
 		return err
 	}
-	logger.Info("CnfCertificationSuiteRun's config map name field is valid", configMapLoggerKey, configMap.Name)
-	return err
+
+	// Verify required field exists and that it's not empty
+	if value, exists := configMap.Data["tnf_config.yaml"]; !exists || value == "" {
+		err := fmt.Errorf("config map's 'tnf_config.yaml' field must be set")
+		logger.Error(err, "CnfCertificationSuiteRun's config map is invalid",
+			configMapLoggerKey, r.Spec.ConfigMapName)
+		return err
+	}
+
+	logger.Info("CnfCertificationSuiteRun's config map field is valid", configMapLoggerKey, configMap.Name)
+	return nil
 }
 
 func (r *CnfCertificationSuiteRun) validatePreflightSecret() error {
 	preflightSecret := &v1.Secret{}
-	err := c.Get(context.TODO(), types.NamespacedName{Name: r.Spec.PreflightSecretName, Namespace: r.Namespace}, preflightSecret)
+
+	// Nil Preflight Secret is valid
+	if r.Spec.PreflightSecretName == nil {
+		logger.Info("CnfCertificationSuiteRun's preflight secret field is valid", preflightSecretLoggerKey, preflightSecret.Name)
+		return nil
+	}
+
+	// Return an error if preflight secret is not found by name and ns, or field is empty
+	err := c.Get(context.TODO(), types.NamespacedName{Name: *r.Spec.PreflightSecretName, Namespace: r.Namespace}, preflightSecret)
 	if err != nil {
 		logger.Error(err, "CnfCertificationSuiteRun's preflight secret name field is invalid",
 			preflightSecretLoggerKey, r.Spec.PreflightSecretName)
 		return err
 	}
-	logger.Info("CnfCertificationSuiteRun's preflight secret name field is valid", preflightSecretLoggerKey, preflightSecret.Name)
+
+	// Verify required field exists and that it's not empty
+	if value, exists := preflightSecret.Data["preflight_dockerconfig.json"]; !exists || value == nil {
+		err := fmt.Errorf("preflight secret's 'preflight_dockerconfig.json' field must be set")
+		logger.Error(err, "CnfCertificationSuiteRun's preflight secret is invalid",
+			configMapLoggerKey, r.Spec.ConfigMapName)
+		return err
+	}
+
+	logger.Info("CnfCertificationSuiteRun's preflight secret field is valid", preflightSecretLoggerKey, preflightSecret.Name)
 	return nil
 }
 
