@@ -225,6 +225,18 @@ func WithSideCarApp(sideCarAppImage string) func(*corev1.Pod) error {
 	}
 }
 
+func WithEnableDataCollection(enableDataCollection string) func(*corev1.Pod) error {
+	return func(p *corev1.Pod) error {
+		envVar := corev1.EnvVar{Name: "TNF_ENABLE_DATA_COLLECTION", Value: enableDataCollection}
+		cnfCertSuiteContainer := getCnfCertSuiteContainer(p)
+		if cnfCertSuiteContainer == nil {
+			return fmt.Errorf("cnf cert suite Container is not found in pod %s", p.Name)
+		}
+		cnfCertSuiteContainer.Env = append(cnfCertSuiteContainer.Env, envVar)
+		return nil
+	}
+}
+
 func getSideCarAppContainer(p *corev1.Pod) *corev1.Container {
 	for i := range p.Spec.Containers {
 		if p.Spec.Containers[i].Name == definitions.CnfCertSuiteSidecarContainerName {
