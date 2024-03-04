@@ -83,9 +83,12 @@ jobs:
       - name: Build and push controller image
         run: make docker-build docker-push
 
-      - name: Build and push bundle
+      - name: Build and push bundle image
         run: |
           rm bundle/manifests/* || true
           make bundle
           make bundle-build bundle-push
+
+      - name: Build and push catalog image
+        run: make catalog-build catalog-push
 
