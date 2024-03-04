@@ -175,7 +175,8 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 	cd config/manager \
 	  && $(KUSTOMIZE) edit set image controller=${IMG} \
       && $(KUSTOMIZE) edit add patch --kind Deployment --patch "[{\"op\": \"replace\", \"path\": \"/spec/template/spec/containers/0/env/1\", \"value\": {\"name\": \"SIDECAR_APP_IMG\", \"value\": \"${SIDECAR_IMG}\"} }]"
-	$(KUSTOMIZE) build config/default | kubectl apply -f -
+	cd config/crd && $(KUSTOMIZE) edit add patch --path patches/cainjection_in_cnfcertificationsuiteruns.yaml
+	$(KUSTOMIZE) build config/default/manual-deploy | kubectl apply -f -
 
 .PHONY: undeploy
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
@@ -223,7 +224,9 @@ $(ENVTEST): $(LOCALBIN)
 .PHONY: bundle
 bundle: manifests kustomize ## Generate bundle manifests and metadata, then validate generated files.
 	operator-sdk generate kustomize manifests -q
-	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
+	cd config/manager \
+	  && $(KUSTOMIZE) edit set image controller=${IMG} \
+      && $(KUSTOMIZE) edit add patch --kind Deployment --patch "[{\"op\": \"replace\", \"path\": \"/spec/template/spec/containers/0/env/1\", \"value\": {\"name\": \"SIDECAR_APP_IMG\", \"value\": \"${SIDECAR_IMG}\"} }]"
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle $(BUNDLE_GEN_FLAGS) --extra-service-accounts cnf-certsuite-cluster-access
 	operator-sdk bundle validate ./bundle
 
