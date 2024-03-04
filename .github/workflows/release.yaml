@@ -27,8 +27,8 @@ jobs:
       - name: Set release version output var depending on the trigger type.
         run: |
             if ${GITHUB_EVENT_NAME} == "workflow_dispatch"; then
-              echo "Manually triggered workflow to make release ${{ on.workflow_dispatch.inputs.version }}"
-              echo "::set-output name=release_tag::${{ on.workflow_dispatch.inputs.version }}"
+              echo "Manually triggered workflow to make release ${{ inputs.version }}"
+              echo "::set-output name=release_tag::${{ inputs.version }}"
             else
               echo "New release published: ${{ github.ref_name }}"
               echo "::set-output name=release_tag::${{ github.ref_name }}"
