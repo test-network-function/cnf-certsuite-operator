@@ -24,7 +24,7 @@ jobs:
       SHELL: /bin/bash
 
     outputs:
-      release_tag: {{ steps.set_release.release_tag }}
+      release_tag: ${{ steps.set_release.release_tag }}
 
     steps:
       - name: Set release version output var depending on the trigger type.
