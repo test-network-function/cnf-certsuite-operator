@@ -1,0 +1,94 @@
+name: Create operator's container image for the new release
+
+on:
+  release:
+    types: [published]
+
+  # Manual dispatch: requires version string from github's GUI.
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        description: 'SemVer for the new release.'
+        required: true
+        default: 'v0.0.1'
+env:
+  REGISTRY: quay.io
+  TERM: xterm-color
+
+jobs:
+  set_release_version:
+    name: Set release version.
+    runs-on: ubuntu-22.04
+    env:
+      SHELL: /bin/bash
+
+    steps:
+      - name: Set release version output var depending on the trigger type.
+        run: |
+            if ${GITHUB_EVENT_NAME} == "workflow_dispatch"; then
+              echo "Manually triggered workflow to make release ${{ inputs.version }}"
+              echo "::set-output name=release_tag::${{ inputs.version }}"
+            else
+              echo "New release published: ${{ github.ref_name }}"
+              echo "::set-output name=release_tag::${{ github.ref_name }}"
+            fi
+
+  publish_new_version:
+    needs: set_release_version
+    name: Build and publish new version
+    runs-on: ubuntu-22.04
+    env:
+      SHELL: /bin/bash
+      VERSION: ${{ jobs.set_release_version.outputs.release_tag }}
+      USERNAME: testnetworkfunction
+      REPO: ${REGISTRY}/${USERNAME}/cnf-certsuite-operator
+      IMG: ${REPO}:v${VERSION}
+      SIDECAR_IMG: ${REPO}-sidecar:v${VERSION}
+      BUNDLE_IMG: ${REPO}-bundle:v${VERSION}
+      CATALOG_IMG: ${REPO}-catalog:v${VERSION}
+
+    steps:
+      - name: Print release images versions
+        run: |
+          echo "Release version to build: ${VERSION}"
+          echo "  - Controller : ${IMG}"
+          echo "  - Sidecar    : ${SIDECAR_IMG}"
+          echo "  - Bundle     : ${BUNDLE_IMG}"
+          echo "  - Catalog    : ${CATALOG_IMG}"
+
+      - name: Set up Go 1.22
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.22.0
+
+      - name: Disable default go problem matcher
+        run: echo "::remove-matcher owner=go::"
+
+      - name: Check out the repo.
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Authenticate against Quay.io
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.QUAY_ROBOT_USERNAME }}
+          password: ${{ secrets.QUAY_ROBOT_TOKEN }}
+
+      - name: Build and push sidecar app image
+        run: docker build --no-cache -t "${SIDECAR_IMG}" -f cnf-cert-sidecar/Dockerfile . && docker push ${SIDECAR_IMG}
+
+      - name: Build and push controller image
+        run: make docker-build docker-push
+
+      - name: Build and push bundle image
+        run: |
+          rm bundle/manifests/* || true
+          make bundle
+          make bundle-build bundle-push
+
+      - name: Build and push catalog image
+        run: make catalog-build catalog-push
+

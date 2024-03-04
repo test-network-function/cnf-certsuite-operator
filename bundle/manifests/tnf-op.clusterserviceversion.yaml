@@ -28,7 +28,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2024-01-25T07:40:11Z"
+    createdAt: "2024-02-28T14:55:50Z"
     operators.operatorframework.io/builder: operator-sdk-v1.33.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
   name: tnf-op.v0.0.1
@@ -168,6 +168,10 @@ spec:
                   initialDelaySeconds: 15
                   periodSeconds: 20
                 name: manager
+                ports:
+                - containerPort: 9443
+                  name: webhook-server
+                  protocol: TCP
                 readinessProbe:
                   httpGet:
                     path: /readyz
@@ -186,10 +190,19 @@ spec:
                   capabilities:
                     drop:
                     - ALL
+                volumeMounts:
+                - mountPath: /tmp/k8s-webhook-server/serving-certs
+                  name: cert
+                  readOnly: true
               securityContext:
                 runAsNonRoot: true
               serviceAccountName: cnf-certsuite-controller-manager
               terminationGracePeriodSeconds: 10
+              volumes:
+              - name: cert
+                secret:
+                  defaultMode: 420
+                  secretName: webhook-server-cert
       permissions:
       - rules:
         - apiGroups:
@@ -223,6 +236,15 @@ spec:
           verbs:
           - create
           - patch
+        - apiGroups:
+          - ""
+          resources:
+          - configMaps
+          - secrets
+          verbs:
+          - get
+          - list
+          - watch
         - apiGroups:
           - ""
           resources:
@@ -310,3 +332,24 @@ spec:
   provider:
     name: RedHat
   version: 0.0.1
+  webhookdefinitions:
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: cnf-certsuite-controller-manager
+    failurePolicy: Fail
+    generateName: vcnfcertificationsuiterun.kb.io
+    rules:
+    - apiGroups:
+      - cnf-certifications.redhat.com
+      apiVersions:
+      - v1alpha1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - cnfcertificationsuiteruns
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-cnf-certifications-redhat-com-v1alpha1-cnfcertificationsuiterun
