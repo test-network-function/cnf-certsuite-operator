@@ -23,15 +23,19 @@ jobs:
     env:
       SHELL: /bin/bash
 
+    outputs:
+      release_tag: {{ steps.set_release.release_tag }}
+
     steps:
       - name: Set release version output var depending on the trigger type.
+        id: set_release
         run: |
             if ${GITHUB_EVENT_NAME} == "workflow_dispatch"; then
               echo "Manually triggered workflow to make release ${{ inputs.version }}"
-              echo "::set-output name=release_tag::${{ inputs.version }}"
+              echo "release_tag=${{ inputs.version }}" >> ${GITHUB_OUTPUT}
             else
               echo "New release published: ${{ github.ref_name }}"
-              echo "::set-output name=release_tag::${{ github.ref_name }}"
+              echo "release_tag=${{ github.ref_name }}" >> ${GITHUB_OUTPUT}
             fi
 
   publish_new_version:
@@ -40,7 +44,7 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       SHELL: /bin/bash
-      VERSION: ${{ jobs.set_release_version.outputs.release_tag }}
+      VERSION: ${{ needs.set_release_version.outputs.release_tag }}
       USERNAME: testnetworkfunction
       REPO: ${REGISTRY}/${USERNAME}/cnf-certsuite-operator
       IMG: ${REPO}:v${VERSION}
