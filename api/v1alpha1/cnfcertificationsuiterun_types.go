@@ -38,7 +38,7 @@ type CnfCertificationSuiteRunSpec struct {
 	// ConfigMapName holds the cnf certification suite yaml config.
 	ConfigMapName string `json:"configMapName"`
 	// PreflightSecretName holds the secret name for preflight's dockerconfig.
-	PreflightSecretName string `json:"preflightSecretName"`
+	PreflightSecretName *string `json:"preflightSecretName,omitempty"`
 }
 
 // CnfCertificationSuiteRunStatus defines the observed state of CnfCertificationSuiteRun

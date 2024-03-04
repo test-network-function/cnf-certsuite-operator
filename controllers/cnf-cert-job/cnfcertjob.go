@@ -100,11 +100,6 @@ func newInitialJobPod() *corev1.Pod {
 							ReadOnly:  true,
 							MountPath: definitions.CnfCnfCertSuiteConfigFolder,
 						},
-						{
-							Name:      "cnf-certsuite-preflight-dockerconfig",
-							ReadOnly:  true,
-							MountPath: definitions.CnfPreflightConfigFolder,
-						},
 					},
 				},
 			},
@@ -199,17 +194,29 @@ func WithConfigMap(configMapName string) func(*corev1.Pod) error {
 	}
 }
 
-func WithPreflightSecret(preflightSecretName string) func(*corev1.Pod) error {
+func WithPreflightSecret(preflightSecretName *string) func(*corev1.Pod) error {
 	return func(p *corev1.Pod) error {
+		if preflightSecretName == nil {
+			return nil
+		}
+
 		Volume := corev1.Volume{
 			Name: "cnf-certsuite-preflight-dockerconfig",
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: preflightSecretName,
+					SecretName: *preflightSecretName,
 				},
 			},
 		}
 		p.Spec.Volumes = append(p.Spec.Volumes, Volume)
+
+		cnfCertCuiteContainer := getCnfCertSuiteContainer(p)
+		volumeMount := corev1.VolumeMount{
+			Name:      "cnf-certsuite-preflight-dockerconfig",
+			ReadOnly:  true,
+			MountPath: definitions.CnfPreflightConfigFolder,
+		}
+		cnfCertCuiteContainer.VolumeMounts = append(cnfCertCuiteContainer.VolumeMounts, volumeMount)
 		return nil
 	}
 }

@@ -67,7 +67,6 @@ spec:
             - configMapName
             - labelsFilter
             - logLevel
-            - preflightSecretName
             - timeout
             type: object
           status:
