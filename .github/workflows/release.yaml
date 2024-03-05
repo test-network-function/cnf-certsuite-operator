@@ -60,6 +60,17 @@ jobs:
         with:
           go-version: 1.21.7
 
+      - name: Download operator-sdk
+        env:
+          OPERATOR_SDK_BIN=operator-sdk_linux_amd64
+          OPERATOR_SDK_DL_URL=https://github.com/operator-framework/operator-sdk/releases/download/v1.33.0
+          OPERATOR_SDK_DEST_FOLDER=/usr/local/bin
+        run: |
+          curl --location --remote-name ${OPERATOR_SDK_DL_URL}/${OPERATOR_SDK_BIN}
+          chmod +x ${OPERATOR_SDK_BIN}
+          sudo mv ${OPERATOR_SDK_BIN} ${OPERATOR_SDK_DEST_FOLDER}/operator-sdk
+          operator-sdk version
+
       - name: Disable default go problem matcher
         run: echo "::remove-matcher owner=go::"
 
