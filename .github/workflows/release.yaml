@@ -29,19 +29,18 @@ jobs:
 
     steps:
       - name: Set release version output var depending on the trigger type.
-        id: set_release
         run: |
             if [ ${GITHUB_EVENT_NAME} == "workflow_dispatch" ]; then
-              echo "Manually triggered workflow to make release ${{ inputs.version }}"
               VERSION=${{ inputs.version }}
-              echo "VERSION=${VERSION}" >> ${GITHUB_ENV}
+              echo "Manually triggered workflow to make release ${VERSION}"
             else
-              echo "New release published: ${{ github.ref_name }}"
-              echo "VERSION=${{ github.ref_name }}" >> ${GITHUB_ENV}
+              VERSION=${{ github.ref_name }}
+              echo "New release published: ${VERSION}"
             fi
 
             REPO=${REGISTRY}/${REGISTRY_USER}/${REPO_BASE_NAME}
 
+            echo "VERSION=${VERSION}"                      >> ${GITHUB_ENV}
             echo "IMG=${REPO}:v${VERSION}"                 >> ${GITHUB_ENV}
             echo "SIDECAR_IMG=${REPO}-sidecar:v${VERSION}" >> ${GITHUB_ENV}
             echo "BUNDLE_IMG=${REPO}-bundle:v${VERSION}"   >> ${GITHUB_ENV}
@@ -55,10 +54,20 @@ jobs:
           echo "  - Bundle     : ${BUNDLE_IMG}"
           echo "  - Catalog    : ${CATALOG_IMG}"
 
+      - name: Authenticate against Quay.io
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.QUAY_ROBOT_USERNAME }}
+          password: ${{ secrets.QUAY_ROBOT_TOKEN }}
+
       - name: Set up Go 1.21
         uses: actions/setup-go@v4
         with:
           go-version: 1.21.7
+
+      - name: Disable default go problem matcher
+        run: echo "::remove-matcher owner=go::"
 
       - name: Download operator-sdk
         env:
@@ -71,20 +80,10 @@ jobs:
           sudo mv ${OPERATOR_SDK_BIN} ${OPERATOR_SDK_DEST_FOLDER}/operator-sdk
           operator-sdk version
 
-      - name: Disable default go problem matcher
-        run: echo "::remove-matcher owner=go::"
-
       - name: Check out the repo.
         uses: actions/checkout@v3
         with:
           ref: ${{ github.ref_name }}
-
-      - name: Authenticate against Quay.io
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.QUAY_ROBOT_USERNAME }}
-          password: ${{ secrets.QUAY_ROBOT_TOKEN }}
 
       - name: Build and push sidecar app image
         run: docker build --no-cache -t "${SIDECAR_IMG}" -f cnf-cert-sidecar/Dockerfile . && docker push ${SIDECAR_IMG}
