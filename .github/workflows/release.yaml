@@ -1,4 +1,4 @@
-name: Create operator's container image for the new release
+name: Build and publish release containers to quay.io
 
 on:
   release:
@@ -9,50 +9,44 @@ on:
     inputs:
       version:
         type: string
-        description: 'SemVer for the new release.'
+        description: 'Version (Semating Versioning) for the new release. E.g: 0.0.1'
         required: true
-        default: 'v0.0.1'
+        default: '0.0.1'
+
 env:
   REGISTRY: quay.io
+  REGISTRY_USER: testnetworkfunction
+  REPO_BASE_NAME: cnf-certsuite-operator
+
   TERM: xterm-color
 
 jobs:
-  set_release_version:
-    name: Set release version.
+  publish_new_version:
+    name: Build and publish release containers to quay.io
     runs-on: ubuntu-22.04
     env:
       SHELL: /bin/bash
-
-    outputs:
-      release_tag: ${{ steps.set_release.release_tag }}
 
     steps:
       - name: Set release version output var depending on the trigger type.
         id: set_release
         run: |
-            if ${GITHUB_EVENT_NAME} == "workflow_dispatch"; then
+            if [ ${GITHUB_EVENT_NAME} == "workflow_dispatch" ]; then
               echo "Manually triggered workflow to make release ${{ inputs.version }}"
-              echo "release_tag=${{ inputs.version }}" >> ${GITHUB_OUTPUT}
+              VERSION=${{ inputs.version }}
+              echo "VERSION=${VERSION}" >> ${GITHUB_ENV}
             else
               echo "New release published: ${{ github.ref_name }}"
-              echo "release_tag=${{ github.ref_name }}" >> ${GITHUB_OUTPUT}
+              echo "VERSION=${{ github.ref_name }}" >> ${GITHUB_ENV}
             fi
 
-  publish_new_version:
-    needs: set_release_version
-    name: Build and publish new version
-    runs-on: ubuntu-22.04
-    env:
-      SHELL: /bin/bash
-      VERSION: ${{ needs.set_release_version.outputs.release_tag }}
-      USERNAME: testnetworkfunction
-      REPO: ${REGISTRY}/${USERNAME}/cnf-certsuite-operator
-      IMG: ${REPO}:v${VERSION}
-      SIDECAR_IMG: ${REPO}-sidecar:v${VERSION}
-      BUNDLE_IMG: ${REPO}-bundle:v${VERSION}
-      CATALOG_IMG: ${REPO}-catalog:v${VERSION}
+            REPO=${REGISTRY}/${REGISTRY_USER}/${REPO_BASE_NAME}
 
-    steps:
+            echo "IMG=${REPO}:v${VERSION}"                 >> ${GITHUB_ENV}
+            echo "SIDECAR_IMG=${REPO}-sidecar:v${VERSION}" >> ${GITHUB_ENV}
+            echo "BUNDLE_IMG=${REPO}-bundle:v${VERSION}"   >> ${GITHUB_ENV}
+            echo "CATALOG_IMG=${REPO}-catalog:v${VERSION}" >> ${GITHUB_ENV}
+
       - name: Print release images versions
         run: |
           echo "Release version to build: ${VERSION}"
