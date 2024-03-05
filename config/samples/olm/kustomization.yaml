@@ -1,0 +1,8 @@
+
+resources:
+- namespace.yaml
+- catalogsource.yaml
+- operatorgroup.yaml
+- subscription.yaml
+
+namespace: cnf-certsuite-operator
