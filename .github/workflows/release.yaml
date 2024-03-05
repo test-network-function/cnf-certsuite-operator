@@ -55,10 +55,10 @@ jobs:
           echo "  - Bundle     : ${BUNDLE_IMG}"
           echo "  - Catalog    : ${CATALOG_IMG}"
 
-      - name: Set up Go 1.22
+      - name: Set up Go 1.21
         uses: actions/setup-go@v4
         with:
-          go-version: 1.22.0
+          go-version: 1.21.7
 
       - name: Disable default go problem matcher
         run: echo "::remove-matcher owner=go::"
