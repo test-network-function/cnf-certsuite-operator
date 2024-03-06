@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# This script is testing the CnfCertificationSuiteRun CR validation proccess.
+# This script is testing the CnfCertificationSuiteRun CR validation process.
 # Invalid CRs are applied, and it is verified an error is returned.
 # Also a valid CR is applied, and it is verified no error is returned.
 #
@@ -18,7 +18,7 @@ global_error=0
 # Apply/create the valid sample CR.
 oc kustomize config/samples | oc apply -f -  && exit_statuses+=(0) || exit_statuses+=($?)
 
-# Inavlid configmap names
+# Invalid configmap names
 oc apply -f config/samples/validation-test/invalid_run1.yaml && exit_statuses+=(0) || exit_statuses+=($?)
 oc apply -f config/samples/validation-test/invalid_run2.yaml && exit_statuses+=(0) || exit_statuses+=($?)
 oc apply -f config/samples/validation-test/invalid_run3.yaml && exit_statuses+=(0) || exit_statuses+=($?)
