@@ -280,8 +280,26 @@ catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
 
 .PHONY: deploy-samples
-deploy-samples: ## Deploy the sample CR, configmap and secret in the cluster.
+deploy-samples: kustomize ## Deploy the sample CR, configmap and secret in the cluster.
 	cd config/samples \
 	  && $(KUSTOMIZE) edit add resource "extra/cnf-certsuite-configmap.yaml" \
 	  && $(KUSTOMIZE) edit add resource "extra/cnf-certsuite-preflight-secret.yaml"
 	kubectl kustomize config/samples | oc apply -f -
+
+# Install the operator using OLM subscription. It will create the namespace ${OLM_INSTALL_NAMESPACE}, which
+# is defaulted to "cnf-certsuite-operator" if not set, and deploys the CatalogSource, OperatorGroup and
+# and the subscription, using the operator found in the "alpha" channel of the catalog ${OLM_INSTALL_IMG_CATALOG}.
+OLM_INSTALL_IMG_CATALOG ?= quay.io/testnetworkfunction/cnf-certsuite-operator-catalog:latest
+OLM_INSTALL_NAMESPACE ?= cnf-certsuite-operator
+.PHONY: olm-install
+olm-install: kustomize ## Installs the operator using OLM subscription.
+	cd config/samples/olm \
+	  && $(KUSTOMIZE) edit set namespace $(OLM_INSTALL_NAMESPACE) \
+	  && $(KUSTOMIZE) edit add patch --kind CatalogSource --patch "[{\"op\": \"replace\", \"path\": \"/spec/image\",              \"value\": \"$(OLM_INSTALL_IMG_CATALOG)\" }]" \
+	  && $(KUSTOMIZE) edit add patch --kind Subscription  --patch "[{\"op\": \"replace\", \"path\": \"/spec/sourceNamespace\",    \"value\": \"$(OLM_INSTALL_NAMESPACE)\" }]"   \
+	  && $(KUSTOMIZE) edit add patch --kind OperatorGroup --patch "[{\"op\": \"replace\", \"path\": \"/spec/targetNamespaces/0\", \"value\": \"$(OLM_INSTALL_NAMESPACE)\" }]"
+	kubectl kustomize config/samples/olm | kubectl apply -f -
+
+.PHONY: olm-uninstall
+olm-uninstall: kustomize ## Uninstall the operator that was installed with "make olm-install"
+	kubectl kustomize config/samples/olm | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
