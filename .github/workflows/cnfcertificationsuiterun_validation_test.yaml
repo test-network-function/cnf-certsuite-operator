@@ -1,4 +1,4 @@
-name: Test CnfCertificationSuiteRun's validation
+name: Test CnfCertificationSuiteRun webhooks
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
+  validation:
     name: Test CnfCertificationSuiteRun's validation
     runs-on: ubuntu-latest
     env:
