@@ -6,7 +6,7 @@ Cluster -> "CNF Cert Suite Operator" : New CR available
 "CNF Cert Suite Operator" -> Cluster : Creates CNF Cert Pod
 hnote over Cluster : CNF Cert Pod runs the CNF Cert Suite
 activate Cluster
-Cluster -> Cluster : CNF Cert Pod creates CnfCertificationSuiteReport CR
+Cluster -> Cluster : CNF Cert Pod updates CnfCertificationSuiteRun CR
 deactivate Cluster
-User -> Cluster : Check results from CnfCertificationSuiteReport
+User -> Cluster : Checks CnfCertificationSuiteRun.status.report
 @enduml

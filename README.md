@@ -14,13 +14,11 @@ best practices for deployment on Red Hat OpenShift clusters are followed.
 
 ### How does it work?
 
-The Operator registers two CRDs in the cluster:
-`CnfCertificationSuiteRun` and `CnfCertificationSuiteReport`,
-also informally referred as Run and Report CRDs.
+The Operator registers a CRDs in the cluster, `CnfCertificationSuiteRun`.
 
 In order to fire up the CNF Certification Suite, the user must create
-a CnfCertificationSuiteRun CR, which has to be created with a Config Map
-containing the cnf certification suites configuration,
+a CnfCertificationSuiteRun CR, also informally referred as Run CR, which
+has to be created with a Config Map containing the cnf certification suites configuration,
 and a Secret containing the preflight suite credentials.
 **Note:** All resources mentioned above should be created in the operator's
 installation namespace (by default `cnf-certsuite-operator`)
@@ -32,8 +30,9 @@ See resources relationship diagram:
 When the CR is deployed, a new pod with two containers is created:
 
 1. Container built with the cnf certification image in order to run the suites.
-2. Container which creates a new CR representing the CNF Certification suites
-results based on results claim file created by the previous container.
+2. Container (sidecar) which updates the Run CR's status fields containing the
+CNF Certification suites results based on results claim file created by the
+previous container.
 
 **See diagram summarizing the process:**
 
@@ -205,9 +204,9 @@ NAME                              AGE   STATUS
 cnfcertificationsuiterun-sample   50m   CertSuiteFinished
 ```
 
-When the pod is completed, a new `CnfCertificationSuiteReport` will be created
-under the same namespace.
-CNF certification suites results will be stored in the CR's Status different fields:
+The status `CertSuiteFinished` means the CNF Cert Suite pod has finished running
+all the test cases, so the results can be inspected in field `report` of the Run
+CR's (cnfcertificationsuiterun-sample) status subresource.
 
 - Results: For every test case, contains its result and logs.
 If the the result is "skipped" or "failed" contains also the skip\failure reason.
@@ -217,28 +216,29 @@ If the the result is "skipped" or "failed" contains also the skip\failure reason
     <!-- markdownlint-disable -->
     ```sh
     status:
-        results:
-            - logs: |
-                INFO  [Feb 15 13:05:50.749] [check.go: 263] [observability-pod-disruption-budget] Running check (labels: [common observability-pod-disruption-budget observability])
-                INFO  [Feb 15 13:05:50.749] [suite.go: 193] [observability-pod-disruption-budget] Testing Deployment "deployment: test ns: tnf"
-                INFO  [Feb 15 13:05:50.749] [suite.go: 206] [observability-pod-disruption-budget] PDB "test-pdb-min" is valid for Deployment: "test"
-                INFO  [Feb 15 13:05:50.749] [suite.go: 224] [observability-pod-disruption-budget] Testing StatefulSet "statefulset: test ns: tnf"
-                INFO  [Feb 15 13:05:50.749] [suite.go: 237] [observability-pod-disruption-budget] PDB "test-pdb-max" is valid for StatefulSet: "test"
-                INFO  [Feb 15 13:05:50.749] [checksdb.go: 115] [observability-pod-disruption-budget] Recording result "PASSED", claimID: {Id:observability-pod-disruption-budget Suite:observability Tags:common}
-                result: passed
-                testCaseName: observability-pod-disruption-budget
-            - logs: |
-                INFO  [Feb 15 13:05:50.723] [checksgroup.go: 83] [operator-install-source] Skipping check operator-install-source, reason: no matching labels
-                INFO  [Feb 15 13:05:50.723] [checksdb.go: 115] [operator-install-source] Recording result "SKIPPED", claimID: {Id:operator-install-source Suite:operator Tags:common}
-                reason: no matching labels
-                result: skipped
-                testCaseName: operator-install-source
-            - logs: |
-                INFO  [Feb 15 13:05:50.749] [checksgroup.go: 83] [affiliated-certification-helmchart-is-certified] Skipping check affiliated-certification-helmchart-is-certified, reason: no matching labels
-                INFO  [Feb 15 13:05:50.749] [checksdb.go: 115] [affiliated-certification-helmchart-is-certified] Recording result "SKIPPED", claimID: {Id:affiliated-certification-helmchart-is-certified Suite:affiliated-certification Tags:common}
-                reason: no matching labels
-                result: skipped
-                testCaseName: affiliated-certification-helmchart-is-certified
+       report:
+            results:
+                - logs: |
+                    INFO  [Feb 15 13:05:50.749] [check.go: 263] [observability-pod-disruption-budget] Running check (labels: [common observability-pod-disruption-budget observability])
+                    INFO  [Feb 15 13:05:50.749] [suite.go: 193] [observability-pod-disruption-budget] Testing Deployment "deployment: test ns: tnf"
+                    INFO  [Feb 15 13:05:50.749] [suite.go: 206] [observability-pod-disruption-budget] PDB "test-pdb-min" is valid for Deployment: "test"
+                    INFO  [Feb 15 13:05:50.749] [suite.go: 224] [observability-pod-disruption-budget] Testing StatefulSet "statefulset: test ns: tnf"
+                    INFO  [Feb 15 13:05:50.749] [suite.go: 237] [observability-pod-disruption-budget] PDB "test-pdb-max" is valid for StatefulSet: "test"
+                    INFO  [Feb 15 13:05:50.749] [checksdb.go: 115] [observability-pod-disruption-budget] Recording result "PASSED", claimID: {Id:observability-pod-disruption-budget Suite:observability Tags:common}
+                    result: passed
+                    testCaseName: observability-pod-disruption-budget
+                - logs: |
+                    INFO  [Feb 15 13:05:50.723] [checksgroup.go: 83] [operator-install-source] Skipping check operator-install-source, reason: no matching labels
+                    INFO  [Feb 15 13:05:50.723] [checksdb.go: 115] [operator-install-source] Recording result "SKIPPED", claimID: {Id:operator-install-source Suite:operator Tags:common}
+                    reason: no matching labels
+                    result: skipped
+                    testCaseName: operator-install-source
+                - logs: |
+                    INFO  [Feb 15 13:05:50.749] [checksgroup.go: 83] [affiliated-certification-helmchart-is-certified] Skipping check affiliated-certification-helmchart-is-certified, reason: no matching labels
+                    INFO  [Feb 15 13:05:50.749] [checksdb.go: 115] [affiliated-certification-helmchart-is-certified] Recording result "SKIPPED", claimID: {Id:affiliated-certification-helmchart-is-certified Suite:affiliated-certification Tags:common}
+                    reason: no matching labels
+                    result: skipped
+                    testCaseName: affiliated-certification-helmchart-is-certified
     ```
     <!-- markdownlint-enable -->
 
@@ -248,19 +248,12 @@ Poissible verdicts: "pass", "skip", "fail", "error".
 
 Run the following command to ensure its creation:
 
+<!-- markdownlint-disable -->
 ```sh
-$ oc get cnfcertificationsuitereports.cnf-certifications.redhat.com -n cnf-certsuite-operator
-NAME                   AGE
-cnf-job-run-1-report   21h
+$ oc get cnfcertificationsuiteruns.cnf-certifications.redhat.com -n cnf-certsuite-operator cnfcertificationsuiterun-sample -o json | jq '.status.report.verdict'
+"pass"
 ```
-
-To review the test results describe the created
-`CnfCertificationSuiteReport` run the following command:
-
-```sh
-oc describe cnfcertificationsuitereports.cnf-certifications.redhat.com \
--n cnf-certsuite-operator <report`s name>
-```
+<!-- markdownlint-enable -->
 
 ### Uninstall CRDs
 
