@@ -18,5 +18,5 @@ spec:
   logLevel: "info"
   timeout: "2h"
 
-  configMapName: "non-exist-secret"
-  preflightSecretName : "cnf-certsuite-preflight-dockerconfig"
+  configMapName: "cnf-certsuite-config"
+  preflightSecretName : "non-exist-secret"

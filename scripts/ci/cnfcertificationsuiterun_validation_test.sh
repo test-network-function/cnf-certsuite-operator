@@ -62,5 +62,8 @@ done
 
 # Check if any errors occurred
 if [ $global_error -eq 1 ]; then
+    echo "Error: unexpectable result from one of the tests"
     exit 1
+else
+    echo "All Tests have passed!"
 fi
