@@ -49,6 +49,10 @@ spec:
                 description: ConfigMapName holds the cnf certification suite yaml
                   config.
                 type: string
+              enableDataCollection:
+                description: EnableDataCollection is set to true for enabling data
+                  collection to collector
+                type: boolean
               labelsFilter:
                 description: LabelsFilter holds the labels filter/expression of the
                   test cases we want to run.

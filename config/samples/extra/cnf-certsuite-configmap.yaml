@@ -52,3 +52,6 @@ data:
       - "hazelcast-platform-controller-manager-service"
       - "hazelcast-platform-webhook-service"
       - "new-pro-controller-manager-metrics-service"
+    executedBy: ""
+    partnerName: ""
+    collectorAppPassword: ""

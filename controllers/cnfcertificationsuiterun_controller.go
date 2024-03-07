@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -246,6 +247,7 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 		cnfcertjob.WithConfigMap(cnfrun.Spec.ConfigMapName),
 		cnfcertjob.WithPreflightSecret(cnfrun.Spec.PreflightSecretName),
 		cnfcertjob.WithSideCarApp(sideCarImage),
+		cnfcertjob.WithEnableDataCollection(strconv.FormatBool(cnfrun.Spec.EnableDataCollection)),
 	)
 	if err != nil {
 		logger.Errorf("Failed to create CNF Cert job pod: %w", err)

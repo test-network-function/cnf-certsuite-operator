@@ -39,6 +39,9 @@ type CnfCertificationSuiteRunSpec struct {
 	ConfigMapName string `json:"configMapName"`
 	// PreflightSecretName holds the secret name for preflight's dockerconfig.
 	PreflightSecretName *string `json:"preflightSecretName,omitempty"`
+
+	// EnableDataCollection is set to true for enabling data collection to collector
+	EnableDataCollection bool `json:"enableDataCollection,omitempty"`
 }
 
 // CnfCertificationSuiteRunStatus defines the observed state of CnfCertificationSuiteRun

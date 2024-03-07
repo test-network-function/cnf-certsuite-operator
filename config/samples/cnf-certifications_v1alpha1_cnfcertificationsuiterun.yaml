@@ -17,3 +17,4 @@ spec:
 
   configMapName: "cnf-certsuite-config"
   preflightSecretName : "cnf-certsuite-preflight-dockerconfig"
+  enableDataCollection: false
