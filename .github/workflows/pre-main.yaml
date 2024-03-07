@@ -175,6 +175,7 @@ jobs:
           docker rmi $(docker images -f "dangling=true" -q) || true
           docker builder prune --all -f
           go clean -modcache
+          rm -rf ${GITHUB_WORKSPACE}/cnf-certification-test-partner
           df -h
 
       - name: Install operator in the Kind cluster
