@@ -1,0 +1,110 @@
+name: Test CnfCertificationSuiteRun webhooks
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  validation:
+    name: Test CnfCertificationSuiteRun's validation
+    runs-on: ubuntu-latest
+    env:
+      SHELL: /bin/bash
+
+    steps:
+      - name: Disable default go problem matcher
+        run: echo "::remove-matcher owner=go::"
+
+        # Restart docker using /mnt/docker-storage (sdb) instead of /var/lib/docker (sda).
+      - name: Make docker to use /mnt (sdb) for storage
+        run: |
+          df -h
+          lsblk
+          sudo mkdir /mnt/docker-storage
+          sudo jq '.  +={"data-root" : "/mnt/docker-storage"}' < /etc/docker/daemon.json > /tmp/docker-daemon.json
+          sudo cp /tmp/docker-daemon.json /etc/docker/daemon.json
+          cat /etc/docker/daemon.json
+          sudo systemctl restart docker
+          sudo ls -la /mnt/docker-storage
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Build operator
+        run: ./scripts/ci/build.sh
+
+      - name: Removed unused docker images and go cache cleanup
+        run: |
+          df -h
+          docker rmi $(docker images -f "dangling=true" -q) || true
+          docker builder prune --all -f
+          go clean -modcache
+          df -h
+
+        # Create a Kind cluster for testing.
+      - name: Check out `cnf-certification-test-partner` repo
+        uses: actions/checkout@v4
+        with:
+          repository: test-network-function/cnf-certification-test-partner
+          path: cnf-certification-test-partner
+
+      - name: Bootstrap cluster, docker, and python
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          command: cd ${GITHUB_WORKSPACE}/cnf-certification-test-partner; make bootstrap-cluster && make bootstrap-docker-ubuntu-local && make bootstrap-python-ubuntu-local
+
+    # Restart docker using /mnt/docker-storage (sdb) instead of /var/lib/docker (sda).
+    # This step needs to be done right after the partner repo's bootstrap scripts, as they
+    # overwrite the docker's daemon.json.
+      - name: Make docker to use /mnt (sdb) for storage
+        run: |
+          df -h
+          lsblk
+          sudo mkdir /mnt/docker-storage || true
+          sudo jq '.  +={"data-root" : "/mnt/docker-storage"}' < /etc/docker/daemon.json > /tmp/docker-daemon.json
+          sudo cp /tmp/docker-daemon.json /etc/docker/daemon.json
+          cat /etc/docker/daemon.json
+          sudo systemctl restart docker
+          sudo ls -la /mnt/docker-storage
+
+      - name: Run 'make rebuild-cluster'
+        uses: nick-fields/retry@v2
+        env:
+          SKIP_PRELOAD_IMAGES: true
+        with:
+          timeout_minutes: 15
+          max_attempts: 3
+          command: cd ${GITHUB_WORKSPACE}/cnf-certification-test-partner; make rebuild-cluster
+
+      - name: Run 'make install'
+        uses: nick-fields/retry@v2
+        env:
+          SKIP_PRELOAD_IMAGES: true
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          command: cd ${GITHUB_WORKSPACE}/cnf-certification-test-partner; make install
+
+      - name: Install cert-manager to cluster
+        run: kubectl apply -f https://github.com/jetstack/cert-manager/releases/latest/download/cert-manager.yaml
+
+      - name: More cleanup
+        run: |
+          df -h
+          docker rmi $(docker images -f "dangling=true" -q) || true
+          docker builder prune --all -f
+          go clean -modcache
+          df -h
+
+      - name: Install operator in the Kind cluster
+        run: ./scripts/ci/deploy.sh
+
+      - name: Test CnfCertificationSuiteRun's validation
+        run: ./scripts/ci/cnfcertificationsuiterun_validation_test.sh

@@ -145,7 +145,7 @@ func (r *CnfCertificationSuiteRun) validatePreflightSecret() error {
 	}
 
 	// Verify required field exists and that it's not empty
-	if value, exists := preflightSecret.Data["preflight_dockerconfig.json"]; !exists || value == nil {
+	if value, exists := preflightSecret.Data["preflight_dockerconfig.json"]; !exists || len(value) == 0 {
 		err := fmt.Errorf("preflight secret's 'preflight_dockerconfig.json' field must be set with a valid docker config json content")
 		logger.Error(err, "CnfCertificationSuiteRun's preflight secret is invalid",
 			configMapLoggerKey, r.Spec.ConfigMapName, namespaceLoggerKey, r.Namespace)
