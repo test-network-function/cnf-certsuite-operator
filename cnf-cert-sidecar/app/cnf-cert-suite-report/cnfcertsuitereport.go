@@ -93,26 +93,30 @@ func SetRunCRStatus(runCR *cnfcertificationsv1alpha1.CnfCertificationSuiteRun, c
 	totalTests, passedTests, skippedTests, failedTests, erroredTests := 0, 0, 0, 0, 0
 	for tcName := range *testSuiteResults {
 		tcResult := (*testSuiteResults)[tcName]
-		reason := ""
+		testCaseResult := cnfcertificationsv1alpha1.TestCaseResult{
+			TestCaseName: tcName,
+			Result:       tcResult.State,
+		}
+
 		switch tcResult.State {
 		case "passed":
 			passedTests++
 		case "skipped":
 			skippedTests++
-			reason = tcResult.SkipReason
+			testCaseResult.Reason = tcResult.SkipReason
 		case "failed":
 			failedTests++
-			reason = tcResult.FailureReason
+			testCaseResult.Reason = tcResult.FailureReason
+			testCaseResult.Logs = tcResult.CapturedTestOutput
 		case "error": //nolint:goconst
 			erroredTests++
 		}
+
+		if runCR.Spec.ShowAllResultsLogs {
+			testCaseResult.Logs = tcResult.CapturedTestOutput
+		}
 		totalTests++
-		results = append(results, cnfcertificationsv1alpha1.TestCaseResult{
-			TestCaseName: tcName,
-			Result:       tcResult.State,
-			Reason:       reason,
-			Logs:         tcResult.CapturedTestOutput,
-		})
+		results = append(results, testCaseResult)
 	}
 
 	runCR.Status.Report = &cnfcertificationsv1alpha1.CnfCertificationSuiteReport{
