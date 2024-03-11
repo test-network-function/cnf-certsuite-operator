@@ -2,6 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
+    cert-manager.io/inject-ca-from: $(CERTIFICATE_NAMESPACE)/$(CERTIFICATE_NAME)
     controller-gen.kubebuilder.io/version: v0.11.1
   creationTimestamp: null
   name: cnfcertificationsuiteruns.cnf-certifications.redhat.com
@@ -50,6 +51,10 @@ spec:
                 description: ConfigMapName holds the cnf certification suite yaml
                   config.
                 type: string
+              enableDataCollection:
+                description: EnableDataCollection is set to true for enabling data
+                  collection to collector
+                type: boolean
               labelsFilter:
                 description: LabelsFilter holds the labels filter/expression of the
                   test cases we want to run.
@@ -68,21 +73,152 @@ spec:
             - configMapName
             - labelsFilter
             - logLevel
-            - preflightSecretName
             - timeout
             type: object
           status:
             description: CnfCertificationSuiteRunStatus defines the observed state
               of CnfCertificationSuiteRun
             properties:
+              cnfCertSuitePodName:
+                description: CnfCertSuitePodName holds the name of the pod where the
+                  CNF Certification Suite app is running.
+                type: string
               phase:
                 description: Phase holds the current phase of the CNF Certification
                   Suite run.
+                enum:
+                - CertSuiteDeploying
+                - CertSuiteDeployFailure
+                - CertSuiteRunning
+                - CertSuiteFinished
+                - CertSuiteError
                 type: string
-              reportName:
-                description: Report Name of the CnfCertificationSuiteReport that has
-                  been created.
-                type: string
+              report:
+                description: Report holds the results and information related to the
+                  CNF Certification Suite run.
+                properties:
+                  cnfCertSuiteVersion:
+                    type: string
+                  cnfTargets:
+                    properties:
+                      crds:
+                        items:
+                          type: string
+                        type: array
+                      csvs:
+                        items:
+                          properties:
+                            name:
+                              type: string
+                            namespace:
+                              type: string
+                          type: object
+                        type: array
+                      deployments:
+                        items:
+                          properties:
+                            name:
+                              type: string
+                            namespace:
+                              type: string
+                          type: object
+                        type: array
+                      helmChartReleases:
+                        items:
+                          properties:
+                            name:
+                              type: string
+                            namespace:
+                              type: string
+                          type: object
+                        type: array
+                      namespaces:
+                        items:
+                          type: string
+                        type: array
+                      nodes:
+                        items:
+                          type: string
+                        type: array
+                      pods:
+                        items:
+                          properties:
+                            containers:
+                              items:
+                                type: string
+                              type: array
+                            name:
+                              type: string
+                            namespace:
+                              type: string
+                          type: object
+                        type: array
+                      services:
+                        items:
+                          properties:
+                            name:
+                              type: string
+                            namespace:
+                              type: string
+                          type: object
+                        type: array
+                      statefulSets:
+                        items:
+                          properties:
+                            name:
+                              type: string
+                            namespace:
+                              type: string
+                          type: object
+                        type: array
+                    type: object
+                  ocpVersion:
+                    type: string
+                  results:
+                    items:
+                      description: TestCaseResult holds a test case result
+                      properties:
+                        logs:
+                          type: string
+                        reason:
+                          type: string
+                        result:
+                          type: string
+                        testCaseName:
+                          type: string
+                      required:
+                      - result
+                      - testCaseName
+                      type: object
+                    type: array
+                  summary:
+                    properties:
+                      errored:
+                        type: integer
+                      failed:
+                        type: integer
+                      passed:
+                        type: integer
+                      skipped:
+                        type: integer
+                      total:
+                        type: integer
+                    required:
+                    - errored
+                    - failed
+                    - passed
+                    - skipped
+                    - total
+                    type: object
+                  verdict:
+                    type: string
+                required:
+                - cnfCertSuiteVersion
+                - ocpVersion
+                - results
+                - summary
+                - verdict
+                type: object
             required:
             - phase
             type: object

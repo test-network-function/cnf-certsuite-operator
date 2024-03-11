@@ -1,6 +1,14 @@
 package definitions
 
 const (
+	CnfCertificationSuiteRunStatusPhaseCertSuiteDeploying     = "CertSuiteDeploying"
+	CnfCertificationSuiteRunStatusPhaseCertSuiteDeployFailure = "CertSuiteDeployFailure"
+	CnfCertificationSuiteRunStatusCertSuiteRunning            = "CertSuiteRunning"
+	CnfCertificationSuiteRunStatusPhaseJobFinished            = "CertSuiteFinished"
+	CnfCertificationSuiteRunStatusPhaseJobError               = "CertSuiteError"
+)
+
+const (
 	CnfCertPodNamePrefix             = "cnf-job-run"
 	CnfCertSuiteSidecarContainerName = "cnf-certsuite-sidecar"
 	CnfCertSuiteContainerName        = "cnf-certsuite"

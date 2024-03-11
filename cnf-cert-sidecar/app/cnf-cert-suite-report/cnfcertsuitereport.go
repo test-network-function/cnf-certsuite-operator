@@ -1,19 +1,9 @@
 package cnfcertsuitereport
 
 import (
-	"fmt"
-	"os"
-
 	cnfcertificationsv1alpha1 "github.com/greyerof/cnf-certification-operator/api/v1alpha1"
 	"github.com/greyerof/cnf-certification-operator/cnf-cert-sidecar/app/claim"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
-const (
-	podNameEnvVar      = "MY_POD_NAME"
-	podNamespaceEnvVar = "MY_POD_NAMESPACE"
-	runCrNameEnvVar    = "RUN_CR_NAME"
 )
 
 type Config struct {
@@ -22,14 +12,14 @@ type Config struct {
 	CertSuiteConfigRunName string
 	OcpVersion             string
 	CnfCertSuiteVersion    string
-	Cnf                    cnfcertificationsv1alpha1.Cnf
+	Cnf                    cnfcertificationsv1alpha1.CnfTargets
 }
 
-func addNamespacesToCnfSpecField(cnf *cnfcertificationsv1alpha1.Cnf, namespaces []string) {
+func addNamespacesToCnfSpecField(cnf *cnfcertificationsv1alpha1.CnfTargets, namespaces []string) {
 	cnf.Namespaces = append(cnf.Namespaces, namespaces...)
 }
 
-func addPodsToCnfSpecField(cnf *cnfcertificationsv1alpha1.Cnf, pods []corev1.Pod) {
+func addPodsToCnfSpecField(cnf *cnfcertificationsv1alpha1.CnfTargets, pods []corev1.Pod) {
 	for podIdx := 0; podIdx < len(pods); podIdx++ {
 		pod := &pods[podIdx]
 		podsContainers := &pod.Spec.Containers
@@ -45,7 +35,7 @@ func addPodsToCnfSpecField(cnf *cnfcertificationsv1alpha1.Cnf, pods []corev1.Pod
 	}
 }
 
-func addOperatorsToCnfSpecField(cnf *cnfcertificationsv1alpha1.Cnf, csvs []claim.Metadata) {
+func addOperatorsToCnfSpecField(cnf *cnfcertificationsv1alpha1.CnfTargets, csvs []claim.Metadata) {
 	for _, csv := range csvs {
 		cnf.Csvs = append(cnf.Csvs, cnfcertificationsv1alpha1.CnfResource{
 			Name:      csv.Name,
@@ -54,13 +44,13 @@ func addOperatorsToCnfSpecField(cnf *cnfcertificationsv1alpha1.Cnf, csvs []claim
 	}
 }
 
-func addCrdsToCnfSpecField(cnf *cnfcertificationsv1alpha1.Cnf, crds []claim.Resource) {
+func addCrdsToCnfSpecField(cnf *cnfcertificationsv1alpha1.CnfTargets, crds []claim.Resource) {
 	for _, crd := range crds {
 		cnf.Crds = append(cnf.Crds, crd.Metadata.Name)
 	}
 }
 
-func addNodesToCnfSpecField(cnf *cnfcertificationsv1alpha1.Cnf, nodes map[string]interface{}) {
+func addNodesToCnfSpecField(cnf *cnfcertificationsv1alpha1.CnfTargets, nodes map[string]interface{}) {
 	for nodeName := range nodes {
 		cnf.Nodes = append(cnf.Nodes, nodeName)
 	}
@@ -75,8 +65,8 @@ func addResourcesToCnfSpecField(cnfResourceField *[]cnfcertificationsv1alpha1.Cn
 	}
 }
 
-func newCnfSpecField(claimcontent *claim.Schema) *cnfcertificationsv1alpha1.Cnf {
-	var cnf cnfcertificationsv1alpha1.Cnf
+func getCnfTargetsFromClaim(claimcontent *claim.Schema) *cnfcertificationsv1alpha1.CnfTargets {
+	var cnf cnfcertificationsv1alpha1.CnfTargets
 	addNamespacesToCnfSpecField(&cnf, claimcontent.Claim.Configurations.NameSpaces)
 	addNodesToCnfSpecField(&cnf, claimcontent.Claim.Nodes.NodeSummary)
 	addPodsToCnfSpecField(&cnf, claimcontent.Claim.Configurations.Pods)
@@ -89,35 +79,16 @@ func newCnfSpecField(claimcontent *claim.Schema) *cnfcertificationsv1alpha1.Cnf 
 	return &cnf
 }
 
-func NewConfig(claimContent *claim.Schema) *Config {
-	reportCrName := fmt.Sprintf("%s-report", os.Getenv(podNameEnvVar))
-	cnf := newCnfSpecField(claimContent)
-
-	return &Config{
-		ReportCrName:           reportCrName,
-		Namespace:              os.Getenv(podNamespaceEnvVar),
-		CertSuiteConfigRunName: os.Getenv(runCrNameEnvVar),
-		OcpVersion:             claimContent.Claim.Versions.Ocp,
-		CnfCertSuiteVersion:    claimContent.Claim.Versions.Tnf,
-		Cnf:                    *cnf,
-	}
-}
-
 func New(config *Config) *cnfcertificationsv1alpha1.CnfCertificationSuiteReport {
 	return &cnfcertificationsv1alpha1.CnfCertificationSuiteReport{
-		ObjectMeta: metav1.ObjectMeta{Name: config.ReportCrName, Namespace: config.Namespace},
-		Spec: cnfcertificationsv1alpha1.CnfCertificationSuiteReportSpec{
-			CertSuiteConfigRunName: config.CertSuiteConfigRunName,
-			OcpVersion:             config.OcpVersion,
-			CnfCertSuiteVersion:    config.CnfCertSuiteVersion,
-			Cnf:                    config.Cnf,
-		},
-		Status: cnfcertificationsv1alpha1.CnfCertificationSuiteReportStatus{},
+		OcpVersion:          config.OcpVersion,
+		CnfCertSuiteVersion: config.CnfCertSuiteVersion,
+		CnfTargets:          config.Cnf,
 	}
 }
 
-func UpdateStatus(cnfCertSuiteReport *cnfcertificationsv1alpha1.CnfCertificationSuiteReport,
-	testSuiteResults *claim.TestSuiteResults) {
+func SetRunCRStatus(runCR *cnfcertificationsv1alpha1.CnfCertificationSuiteRun, claimSchema *claim.Schema) {
+	testSuiteResults := &claimSchema.Claim.Results
 	results := []cnfcertificationsv1alpha1.TestCaseResult{}
 	totalTests, passedTests, skippedTests, failedTests, erroredTests := 0, 0, 0, 0, 0
 	for tcName := range *testSuiteResults {
@@ -143,23 +114,29 @@ func UpdateStatus(cnfCertSuiteReport *cnfcertificationsv1alpha1.CnfCertification
 			Logs:         tcResult.CapturedTestOutput,
 		})
 	}
-	cnfCertSuiteReport.Status.Results = results
-	cnfCertSuiteReport.Status.Summary = cnfcertificationsv1alpha1.CnfCertificationSuiteReportStatusSummary{
-		Total:   totalTests,
-		Passed:  passedTests,
-		Skipped: skippedTests,
-		Failed:  failedTests,
-		Errored: erroredTests,
+
+	runCR.Status.Report = &cnfcertificationsv1alpha1.CnfCertificationSuiteReport{
+		OcpVersion:          claimSchema.Claim.Versions.Ocp,
+		CnfCertSuiteVersion: claimSchema.Claim.Versions.Tnf,
+		CnfTargets:          *getCnfTargetsFromClaim(claimSchema),
+		Results:             results,
+		Summary: cnfcertificationsv1alpha1.CnfCertificationSuiteReportStatusSummary{
+			Total:   totalTests,
+			Passed:  passedTests,
+			Skipped: skippedTests,
+			Failed:  failedTests,
+			Errored: erroredTests,
+		},
 	}
 
 	switch {
 	case erroredTests >= 1: // at least one test encountered an error
-		cnfCertSuiteReport.Status.Verdict = "error"
+		runCR.Status.Report.Verdict = "error"
 	case failedTests >= 1: // at least one failed test
-		cnfCertSuiteReport.Status.Verdict = "fail"
+		runCR.Status.Report.Verdict = "fail"
 	case skippedTests == totalTests: // all tests were skipped
-		cnfCertSuiteReport.Status.Verdict = "skip"
+		runCR.Status.Report.Verdict = "skip"
 	default: // all tests who ran have passed
-		cnfCertSuiteReport.Status.Verdict = "pass"
+		runCR.Status.Report.Verdict = "pass"
 	}
 }

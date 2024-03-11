@@ -44,15 +44,80 @@ type CnfCertificationSuiteRunSpec struct {
 	EnableDataCollection bool `json:"enableDataCollection,omitempty"`
 }
 
+type StatusPhase string
+
+const (
+	StatusPhaseCertSuiteDeploying   = "CertSuiteDeploying"
+	StatusPhaseCertSuiteDeployError = "CertSuiteDeployError"
+	StatusPhaseCertSuiteRunning     = "CertSuiteRunning"
+	StatusPhaseCertSuiteFinished    = "CertSuiteFinished"
+	StatusPhaseCertSuiteError       = "CertSuiteError"
+)
+
 // CnfCertificationSuiteRunStatus defines the observed state of CnfCertificationSuiteRun
 type CnfCertificationSuiteRunStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Phase holds the current phase of the CNF Certification Suite run.
-	Phase string `json:"phase"`
-	// Report Name of the CnfCertificationSuiteReport that has been created.
-	ReportName string `json:"reportName,omitempty"`
+	//+kubebuilder:validation:Enum=CertSuiteDeploying;CertSuiteDeployFailure;CertSuiteRunning;CertSuiteFinished;CertSuiteError
+	Phase StatusPhase `json:"phase"`
+	// CnfCertSuitePodName holds the name of the pod where the CNF Certification Suite app is running.
+	CnfCertSuitePodName *string `json:"cnfCertSuitePodName,omitempty"`
+	// Report holds the results and information related to the CNF Certification Suite run.
+	Report *CnfCertificationSuiteReport `json:"report,omitempty"`
+}
+
+type CnfPod struct {
+	Name       string   `json:"name,omitempty"`
+	Namespace  string   `json:"namespace,omitempty"`
+	Containers []string `json:"containers,omitempty"`
+}
+
+type CnfResource struct {
+	Name      string `json:"name,omitempty"`
+	Namespace string `json:"namespace,omitempty"`
+}
+
+type CnfTargets struct {
+	Namespaces        []string      `json:"namespaces,omitempty"`
+	Nodes             []string      `json:"nodes,omitempty"`
+	Pods              []CnfPod      `json:"pods,omitempty"`
+	Deployments       []CnfResource `json:"deployments,omitempty"`
+	StatefulSets      []CnfResource `json:"statefulSets,omitempty"`
+	Csvs              []CnfResource `json:"csvs,omitempty"`
+	Crds              []string      `json:"crds,omitempty"`
+	Services          []CnfResource `json:"services,omitempty"`
+	HelmChartReleases []CnfResource `json:"helmChartReleases,omitempty"`
+}
+
+// CnfCertificationSuiteReport defines the desired state of CnfCertificationSuiteReport
+type CnfCertificationSuiteReport struct {
+	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+	// Important: Run "make" to regenerate code after modifying this file
+
+	Verdict             string                                   `json:"verdict"`
+	OcpVersion          string                                   `json:"ocpVersion"`
+	CnfCertSuiteVersion string                                   `json:"cnfCertSuiteVersion"`
+	CnfTargets          CnfTargets                               `json:"cnfTargets,omitempty"`
+	Summary             CnfCertificationSuiteReportStatusSummary `json:"summary"`
+	Results             []TestCaseResult                         `json:"results"`
+}
+
+// TestCaseResult holds a test case result
+type TestCaseResult struct {
+	TestCaseName string `json:"testCaseName"`
+	Result       string `json:"result"`
+	Reason       string `json:"reason,omitempty"`
+	Logs         string `json:"logs,omitempty"`
+}
+
+type CnfCertificationSuiteReportStatusSummary struct {
+	Total   int `json:"total"`
+	Passed  int `json:"passed"`
+	Skipped int `json:"skipped"`
+	Failed  int `json:"failed"`
+	Errored int `json:"errored"`
 }
 
 //+kubebuilder:object:root=true

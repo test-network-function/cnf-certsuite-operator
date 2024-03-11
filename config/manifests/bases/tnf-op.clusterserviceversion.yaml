@@ -10,20 +10,15 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: CnfCertificationSuiteReport is the Schema for the cnfcertificationsuitereports
-        API
-      displayName: Cnf Certification Suite Report
-      kind: CnfCertificationSuiteReport
-      name: cnfcertificationsuitereports.cnf-certifications.redhat.com
-      version: v1alpha1
     - description: CnfCertificationSuiteRun is the Schema for the cnfcertificationsuiteruns
         API
       displayName: Cnf Certification Suite Run
       kind: CnfCertificationSuiteRun
       name: cnfcertificationsuiteruns.cnf-certifications.redhat.com
       version: v1alpha1
-  description: CNF Certification Suite Operator
-  displayName: CNF Op
+  description: Deploys the CNF Certification Suite Pod to run the certification suite
+    on target CNF resources.
+  displayName: CNF Certification Suite Operator
   icon:
   - base64data: ""
     mediatype: ""
@@ -41,14 +36,14 @@ spec:
   - supported: true
     type: AllNamespaces
   keywords:
-  - redhat
-  - certification
   - cnf
-  - openshift
+  - certification
+  - cloud
+  - telco
   links:
   - name: Tnf Op
     url: https://tnf-op.domain
   maturity: alpha
   provider:
-    name: RedHat
+    name: Red Hat
   version: 0.0.0

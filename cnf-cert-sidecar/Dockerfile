@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8/ubi:8.9-1107.1705420509 AS build
+FROM registry.access.redhat.com/ubi8/ubi:8.9-1136 AS build
 
 # Install dependencies
 # hadolint ignore=DL3041
