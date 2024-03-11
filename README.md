@@ -14,7 +14,7 @@ best practices for deployment on Red Hat OpenShift clusters are followed.
 
 ### How does it work?
 
-The Operator registers a CRDs in the cluster, `CnfCertificationSuiteRun`.
+The Operator registers a CRD in the cluster: `CnfCertificationSuiteRun`.
 
 In order to fire up the CNF Certification Suite, the user must create
 a CnfCertificationSuiteRun CR, also informally referred as Run CR, which

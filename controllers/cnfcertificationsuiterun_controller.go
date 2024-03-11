@@ -52,7 +52,7 @@ var (
 	// certificationRuns maps a certificationRun to a pod name
 	certificationRuns map[types.NamespacedName]string
 	// Holds an autoincremental CNF Cert Suite pod id
-	cnfRunPodID int
+	certSuitePodID int
 	// sets controller's logger.
 	logger = controllerlogger.New()
 )
@@ -128,10 +128,10 @@ func (r *CnfCertificationSuiteRunReconciler) getJobRunTimeThreshold(timeoutStr s
 	return jobRunTimeThreshold
 }
 
-func (r *CnfCertificationSuiteRunReconciler) waitForCnfCertJobPodToComplete(namespacedName types.NamespacedName, timeOut time.Duration) (exitStatusCode int32, err error) {
+func (r *CnfCertificationSuiteRunReconciler) waitForCertSuitePodToComplete(certSuitePodNamespacedName types.NamespacedName, timeOut time.Duration) (exitStatusCode int32, err error) {
 	for startTime := time.Now(); time.Since(startTime) < timeOut; {
 		certSuitePod := corev1.Pod{}
-		err = r.Get(context.TODO(), namespacedName, &certSuitePod)
+		err = r.Get(context.TODO(), certSuitePodNamespacedName, &certSuitePod)
 		if err != nil {
 			return 0, err
 		}
@@ -149,27 +149,27 @@ func (r *CnfCertificationSuiteRunReconciler) waitForCnfCertJobPodToComplete(name
 		}
 	}
 
-	return 0, fmt.Errorf("timeout (%s) reached while waiting for cert suite pod %v to finish", timeOut, namespacedName)
+	return 0, fmt.Errorf("timeout (%s) reached while waiting for cert suite pod %v to finish", timeOut, certSuitePodNamespacedName)
 }
 
-func (r *CnfCertificationSuiteRunReconciler) getCertSuiteContainerExitStatus(cnfCertJobPod *corev1.Pod) int32 {
-	for i := range cnfCertJobPod.Status.ContainerStatuses {
-		containerStatus := &cnfCertJobPod.Status.ContainerStatuses[i]
+func (r *CnfCertificationSuiteRunReconciler) getCertSuiteContainerExitStatus(certSuitePod *corev1.Pod) int32 {
+	for i := range certSuitePod.Status.ContainerStatuses {
+		containerStatus := &certSuitePod.Status.ContainerStatuses[i]
 		if containerStatus.Name == definitions.CnfCertSuiteContainerName {
 			return containerStatus.State.Terminated.ExitCode
 		}
 	}
 
-	logger.Errorf("Failed to get cert suite exit status: container not found in pod %s (ns %s)", cnfCertJobPod.Name, cnfCertJobPod.Namespace)
+	logger.Errorf("Failed to get cert suite exit status: container not found in pod %s (ns %s)", certSuitePod.Name, certSuitePod.Namespace)
 	return -1
 }
 
 func (r *CnfCertificationSuiteRunReconciler) handleEndOfCnfCertSuiteRun(runCrName, certSuitePodName, namespace, reqTimeout string) {
-	namespacedPod := types.NamespacedName{Name: certSuitePodName, Namespace: namespace}
-	namespacedRunCr := types.NamespacedName{Name: runCrName, Namespace: namespace}
+	certSuitePodNamespacedName := types.NamespacedName{Name: certSuitePodName, Namespace: namespace}
+	runCrNamespacedName := types.NamespacedName{Name: runCrName, Namespace: namespace}
 
 	certSuiteTimeout := r.getJobRunTimeThreshold(reqTimeout)
-	certSuiteExitStatusCode, err := r.waitForCnfCertJobPodToComplete(namespacedPod, certSuiteTimeout)
+	certSuiteExitStatusCode, err := r.waitForCertSuitePodToComplete(certSuitePodNamespacedName, certSuiteTimeout)
 	if err != nil {
 		logger.Errorf("failed to handle end of cert suite run: %v", err)
 	}
@@ -177,18 +177,14 @@ func (r *CnfCertificationSuiteRunReconciler) handleEndOfCnfCertSuiteRun(runCrNam
 	// cnf-cert-job has terminated - checking exit status of cert suite
 	if certSuiteExitStatusCode == 0 {
 		logger.Info("CNF Cert job has finished running.")
-		err = r.updateStatus(namespacedRunCr, func(status *cnfcertificationsv1alpha1.CnfCertificationSuiteRunStatus) {
-			status.Phase = definitions.CnfCertificationSuiteRunStatusPhaseJobFinished
-		})
+		err = r.updateStatusPhase(runCrNamespacedName, definitions.CnfCertificationSuiteRunStatusPhaseJobFinished)
 	} else {
 		logger.Info("CNF Cert job encountered an error. Exit status: ", certSuiteExitStatusCode)
-		err = r.updateStatus(namespacedRunCr, func(status *cnfcertificationsv1alpha1.CnfCertificationSuiteRunStatus) {
-			status.Phase = definitions.CnfCertificationSuiteRunStatusPhaseJobError
-		})
+		err = r.updateStatusPhase(runCrNamespacedName, definitions.CnfCertificationSuiteRunStatusPhaseJobError)
 	}
 
 	if err != nil {
-		logger.Errorf("Failed to update status field Phase of CR %s: %v", namespacedRunCr, err)
+		logger.Errorf("Failed to update status field Phase of CR %s: %v", runCrNamespacedName, err)
 	}
 }
 
@@ -206,48 +202,48 @@ func (r *CnfCertificationSuiteRunReconciler) handleEndOfCnfCertSuiteRun(runCrNam
 func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger.Info("Reconciling CnfCertificationSuiteRun CRD.")
 
-	reqCertificationRun := types.NamespacedName{Name: req.Name, Namespace: req.Namespace}
+	runCrNamespacedName := types.NamespacedName{Name: req.Name, Namespace: req.Namespace}
 	var runCR cnfcertificationsv1alpha1.CnfCertificationSuiteRun
 	if getErr := r.Get(ctx, req.NamespacedName, &runCR); getErr != nil {
 		logger.Infof("CnfCertificationSuiteRun CR %s (ns %s) not found.", req.Name, req.NamespacedName)
-		if podName, exist := certificationRuns[reqCertificationRun]; exist {
+		if podName, exist := certificationRuns[runCrNamespacedName]; exist {
 			logger.Infof("CnfCertificationSuiteRun has been deleted. Removing the associated CNF Cert job pod %v", podName)
 			deleteErr := r.Delete(context.TODO(), &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: podName, Namespace: req.Namespace}})
 			if deleteErr != nil {
 				logger.Errorf("Failed to remove CNF Cert Job pod %s in namespace %s: %w", req.Name, req.Namespace, deleteErr)
 			}
-			delete(certificationRuns, reqCertificationRun)
+			delete(certificationRuns, runCrNamespacedName)
 		}
 		return ctrl.Result{}, client.IgnoreNotFound(getErr)
 	}
 
-	if podName, exist := certificationRuns[reqCertificationRun]; exist {
-		logger.Infof("There's a certification job pod=%v running already. Ignoring changes in CnfCertificationSuiteRun %v", podName, reqCertificationRun)
+	if podName, exist := certificationRuns[runCrNamespacedName]; exist {
+		logger.Infof("There's a certification job pod=%v running already. Ignoring changes in CnfCertificationSuiteRun %v", podName, runCrNamespacedName)
 		return ctrl.Result{}, nil
 	}
 
-	logger.Infof("New CNF Certification Job run requested: %v", reqCertificationRun)
+	logger.Infof("New CNF Certification Job run requested: %v", runCrNamespacedName)
 
-	cnfRunPodID++
-	podName := fmt.Sprintf("%s-%d", definitions.CnfCertPodNamePrefix, cnfRunPodID)
+	certSuitePodID++
+	certSuitePodName := fmt.Sprintf("%s-%d", definitions.CnfCertPodNamePrefix, certSuitePodID)
 
 	// Store the new run & associated CNF Cert pod name
-	certificationRuns[reqCertificationRun] = podName
+	certificationRuns[runCrNamespacedName] = certSuitePodName
 
 	logger.Infof("Running CNF Certification Suite container (job id=%d) with labels %q, log level %q and timeout: %q",
-		cnfRunPodID, runCR.Spec.LabelsFilter, runCR.Spec.LogLevel, runCR.Spec.TimeOut)
+		certSuitePodID, runCR.Spec.LabelsFilter, runCR.Spec.LogLevel, runCR.Spec.TimeOut)
 
 	// Launch the pod with the CNF Cert Suite container plus the sidecar container to fetch the results.
-	err := r.updateStatusPhase(reqCertificationRun, cnfcertificationsv1alpha1.StatusPhaseCertSuiteDeploying)
+	err := r.updateStatusPhase(runCrNamespacedName, cnfcertificationsv1alpha1.StatusPhaseCertSuiteDeploying)
 	if err != nil {
 		logger.Errorf("Failed to set status field Phase %s to CR %s: %v",
-			cnfcertificationsv1alpha1.StatusPhaseCertSuiteDeploying, reqCertificationRun, err)
+			cnfcertificationsv1alpha1.StatusPhaseCertSuiteDeploying, runCrNamespacedName, err)
 		return ctrl.Result{}, nil
 	}
 
 	logger.Info("Creating CNF Cert job pod")
-	cnfCertJobPodSpec, err := cnfcertjob.New(
-		cnfcertjob.WithPodName(podName),
+	cnfCertJobPod, err := cnfcertjob.New(
+		cnfcertjob.WithPodName(certSuitePodName),
 		cnfcertjob.WithNamespace(req.Namespace),
 		cnfcertjob.WithCertSuiteConfigRunName(runCR.Name),
 		cnfcertjob.WithLabelsFilter(runCR.Spec.LabelsFilter),
@@ -260,34 +256,34 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 	)
 	if err != nil {
 		logger.Errorf("Failed to create CNF Cert job pod spec: %w", err)
-		if updateErr := r.updateStatusPhase(reqCertificationRun, cnfcertificationsv1alpha1.StatusPhaseCertSuiteDeployError); updateErr != nil {
-			logger.Errorf("Failed to set status field Phase %s to CR %s: %v", cnfcertificationsv1alpha1.StatusPhaseCertSuiteDeploying, reqCertificationRun, updateErr)
+		if updateErr := r.updateStatusPhase(runCrNamespacedName, cnfcertificationsv1alpha1.StatusPhaseCertSuiteDeployError); updateErr != nil {
+			logger.Errorf("Failed to set status field Phase %s to CR %s: %v", cnfcertificationsv1alpha1.StatusPhaseCertSuiteDeploying, runCrNamespacedName, updateErr)
 		}
 		return ctrl.Result{}, nil
 	}
 
-	err = r.Create(ctx, cnfCertJobPodSpec)
+	err = r.Create(ctx, cnfCertJobPod)
 	if err != nil {
 		logger.Errorf("Failed to create CNF Cert job pod: %w", err)
-		if updateErr := r.updateStatusPhase(reqCertificationRun, cnfcertificationsv1alpha1.StatusPhaseCertSuiteDeployError); updateErr != nil {
-			logger.Errorf("Failed to set status field Phase %s to CR %s: %v", cnfcertificationsv1alpha1.StatusPhaseCertSuiteDeployError, reqCertificationRun, updateErr)
+		if updateErr := r.updateStatusPhase(runCrNamespacedName, cnfcertificationsv1alpha1.StatusPhaseCertSuiteDeployError); updateErr != nil {
+			logger.Errorf("Failed to set status field Phase %s to CR %s: %v", cnfcertificationsv1alpha1.StatusPhaseCertSuiteDeployError, runCrNamespacedName, updateErr)
 		}
 		return ctrl.Result{}, nil
 	}
 
-	err = r.updateStatus(reqCertificationRun, func(status *cnfcertificationsv1alpha1.CnfCertificationSuiteRunStatus) {
+	err = r.updateStatus(runCrNamespacedName, func(status *cnfcertificationsv1alpha1.CnfCertificationSuiteRunStatus) {
 		status.Phase = cnfcertificationsv1alpha1.StatusPhaseCertSuiteRunning
-		status.CnfCertSuitePodName = &podName
+		status.CnfCertSuitePodName = &certSuitePodName
 	})
 	if err != nil {
 		logger.Errorf("Failed to set status field Phase %s and podName %s to CR %s: %v",
-			cnfcertificationsv1alpha1.StatusPhaseCertSuiteRunning, podName, reqCertificationRun, err)
+			cnfcertificationsv1alpha1.StatusPhaseCertSuiteRunning, certSuitePodName, runCrNamespacedName, err)
 		return ctrl.Result{}, nil
 	}
 
-	logger.Infof("Running CNF Cert job pod %s, triggered by CR %v", podName, reqCertificationRun)
+	logger.Infof("Running CNF Cert job pod %s, triggered by CR %v", certSuitePodName, runCrNamespacedName)
 
-	go r.handleEndOfCnfCertSuiteRun(runCR.Name, podName, runCR.Namespace, runCR.Spec.TimeOut)
+	go r.handleEndOfCnfCertSuiteRun(runCR.Name, certSuitePodName, runCR.Namespace, runCR.Spec.TimeOut)
 	return ctrl.Result{}, nil
 }
 
