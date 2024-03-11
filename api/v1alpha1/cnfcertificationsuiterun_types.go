@@ -42,6 +42,8 @@ type CnfCertificationSuiteRunSpec struct {
 
 	// EnableDataCollection is set to true for enabling data collection to collector
 	EnableDataCollection bool `json:"enableDataCollection,omitempty"`
+	// ShowAllResultsLogs is set to true for showing all test results logs, and not only of failed tcs.
+	ShowAllResultsLogs bool `json:"showAllResultsLogs,omitempty"`
 }
 
 type StatusPhase string

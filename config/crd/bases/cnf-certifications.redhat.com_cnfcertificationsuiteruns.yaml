@@ -67,6 +67,10 @@ spec:
                 description: PreflightSecretName holds the secret name for preflight's
                   dockerconfig.
                 type: string
+              showAllResultsLogs:
+                description: ShowAllResultsLogs is set to true for showing all test
+                  results logs, and not only of failed tcs.
+                type: boolean
               timeout:
                 description: Total timeout for the CNF Cert Suite to run.
                 type: string
