@@ -60,10 +60,6 @@ func newInitialJobPod() *corev1.Pod {
 							Name:  definitions.SideCarResultsFolderEnvVar,
 							Value: definitions.CnfCertSuiteResultsFolder,
 						},
-						{
-							Name:  definitions.SideCarShowAllResultsLogsEnvVar,
-							Value: "false", // set to false by default
-						},
 					},
 					ImagePullPolicy: "IfNotPresent",
 					VolumeMounts: []corev1.VolumeMount{
@@ -244,26 +240,6 @@ func WithEnableDataCollection(enableDataCollection string) func(*corev1.Pod) err
 			return fmt.Errorf("cnf cert suite Container is not found in pod %s", p.Name)
 		}
 		cnfCertSuiteContainer.Env = append(cnfCertSuiteContainer.Env, envVar)
-		return nil
-	}
-}
-
-func WithShowAllResultsLogs(showAllResultsLogs string) func(*corev1.Pod) error {
-	return func(p *corev1.Pod) error {
-		// If showAllResultsLogs is not set, return leaving the env var aet to false
-		if showAllResultsLogs == "" {
-			return nil
-		}
-
-		sideCarContainer := getSideCarAppContainer(p)
-		if sideCarContainer == nil {
-			return fmt.Errorf("side Car app Container is not found in pod %s", p.Name)
-		}
-		for i := range sideCarContainer.Env {
-			if sideCarContainer.Env[i].Name == definitions.SideCarShowAllResultsLogsEnvVar {
-				sideCarContainer.Env[i].Value = showAllResultsLogs
-			}
-		}
 		return nil
 	}
 }

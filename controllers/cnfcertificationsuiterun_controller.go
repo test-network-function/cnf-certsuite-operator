@@ -253,7 +253,6 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 		cnfcertjob.WithPreflightSecret(runCR.Spec.PreflightSecretName),
 		cnfcertjob.WithSideCarApp(sideCarImage),
 		cnfcertjob.WithEnableDataCollection(strconv.FormatBool(runCR.Spec.EnableDataCollection)),
-		cnfcertjob.WithShowAllResultsLogs(strconv.FormatBool(runCR.Spec.ShowAllResultsLogs)),
 	)
 	if err != nil {
 		logger.Errorf("Failed to create CNF Cert job pod spec: %w", err)

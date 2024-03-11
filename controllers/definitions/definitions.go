@@ -24,6 +24,4 @@ const (
 	SideCarResultsFolderEnvVar = "TNF_RESULTS_FOLDER"
 
 	SideCarImageEnvVar = "SIDECAR_APP_IMG"
-
-	SideCarShowAllResultsLogsEnvVar = "SHOW_ALL_RESULTS_LOGS"
 )
