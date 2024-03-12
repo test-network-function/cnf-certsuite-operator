@@ -2,7 +2,6 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: $(CERTIFICATE_NAMESPACE)/$(CERTIFICATE_NAME)
     controller-gen.kubebuilder.io/version: v0.11.1
   creationTimestamp: null
   name: cnfcertificationsuiteruns.cnf-certifications.redhat.com
@@ -24,6 +23,9 @@ spec:
     - description: CnfCertificationSuiteRun current status
       jsonPath: .status.phase
       name: Status
+      type: string
+    - jsonPath: .status.report.verdict
+      name: Verdict
       type: string
     name: v1alpha1
     schema:
@@ -52,8 +54,8 @@ spec:
                   config.
                 type: string
               enableDataCollection:
-                description: EnableDataCollection is set to true for enabling data
-                  collection to collector
+                description: EnableDataCollection is set to true to enable sending
+                  results claim file to the "Collector" app, for storing its data.
                 type: boolean
               labelsFilter:
                 description: LabelsFilter holds the labels filter/expression of the
@@ -66,6 +68,10 @@ spec:
                 description: PreflightSecretName holds the secret name for preflight's
                   dockerconfig.
                 type: string
+              showAllResultsLogs:
+                description: ShowAllResultsLogs is set to true for showing all test
+                  results logs, and not only of failed tcs.
+                type: boolean
               timeout:
                 description: Total timeout for the CNF Cert Suite to run.
                 type: string
