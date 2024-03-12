@@ -40,7 +40,7 @@ type CnfCertificationSuiteRunSpec struct {
 	// PreflightSecretName holds the secret name for preflight's dockerconfig.
 	PreflightSecretName *string `json:"preflightSecretName,omitempty"`
 
-	// EnableDataCollection is set to true for enabling data collection to collector
+	// EnableDataCollection is set to true to enable sending results claim file to the "Collector" app, for storing its data.
 	EnableDataCollection bool `json:"enableDataCollection,omitempty"`
 	// ShowAllResultsLogs is set to true for showing all test results logs, and not only of failed tcs.
 	ShowAllResultsLogs bool `json:"showAllResultsLogs,omitempty"`
