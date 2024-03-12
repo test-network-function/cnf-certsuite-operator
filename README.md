@@ -159,9 +159,11 @@ It can be modified by changing manually the `labelsFilter` of the [sample CR](ht
         - **preflightSecretName**: Name of the preflight Secret
         defined at stage 2.
         - **enableDataCollection**: Set to "true" to enable data collection,
-        or "false" otherwise\
-        **Note:** Current operator's version **doesn't** support
-        setting enableDataCollection to "true".
+        or "false" otherwise.\
+        **Note:** When setting this field to true, the claim file will be sent to
+        a server external to the cluster. see
+        [collector repository](https://github.com/test-network-function/collector)
+        for more details
         - **showAllResultsLogs**: Set to "true" to show all result's logs,
         and not only logs of failed test cases.
         This field is set to "false" by default.
