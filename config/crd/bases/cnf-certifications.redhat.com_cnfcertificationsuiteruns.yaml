@@ -53,8 +53,8 @@ spec:
                   config.
                 type: string
               enableDataCollection:
-                description: EnableDataCollection is set to true for enabling data
-                  collection to collector
+                description: EnableDataCollection is set to true to enable sending
+                  results claim file to the "Collector" app, for storing its data.
                 type: boolean
               labelsFilter:
                 description: LabelsFilter holds the labels filter/expression of the

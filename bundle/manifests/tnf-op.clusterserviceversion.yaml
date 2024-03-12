@@ -24,12 +24,13 @@ metadata:
             "labelsFilter": "observability",
             "logLevel": "info",
             "preflightSecretName": "cnf-certsuite-preflight-dockerconfig",
+            "showAllResultsLogs": false,
             "timeout": "2h"
           }
         }
       ]
     capabilities: Basic Install
-    createdAt: "2024-03-11T09:11:43Z"
+    createdAt: "2024-03-12T12:18:21Z"
     operators.operatorframework.io/builder: operator-sdk-v1.33.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
   name: tnf-op.v0.0.1
