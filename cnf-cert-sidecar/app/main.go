@@ -6,10 +6,10 @@ import (
 	"os"
 	"time"
 
-	cnfcertificationsv1alpha1 "github.com/greyerof/cnf-certification-operator/api/v1alpha1"
-	"github.com/greyerof/cnf-certification-operator/cnf-cert-sidecar/app/claim"
-	cnfcertsuitereport "github.com/greyerof/cnf-certification-operator/cnf-cert-sidecar/app/cnf-cert-suite-report"
 	"github.com/sirupsen/logrus"
+	cnfcertificationsv1alpha1 "github.com/test-network-function/cnf-certsuite-operator/api/v1alpha1"
+	"github.com/test-network-function/cnf-certsuite-operator/cnf-cert-sidecar/app/claim"
+	cnfcertsuitereport "github.com/test-network-function/cnf-certsuite-operator/cnf-cert-sidecar/app/cnf-cert-suite-report"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"

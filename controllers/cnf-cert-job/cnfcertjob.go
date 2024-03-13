@@ -6,7 +6,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/greyerof/cnf-certification-operator/controllers/definitions"
+	"github.com/test-network-function/cnf-certsuite-operator/controllers/definitions"
 )
 
 const (

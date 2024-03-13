@@ -34,10 +34,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	cnfcertificationsv1alpha1 "github.com/greyerof/cnf-certification-operator/api/v1alpha1"
-	cnfcertjob "github.com/greyerof/cnf-certification-operator/controllers/cnf-cert-job"
-	"github.com/greyerof/cnf-certification-operator/controllers/definitions"
-	controllerlogger "github.com/greyerof/cnf-certification-operator/controllers/logger"
+	cnfcertificationsv1alpha1 "github.com/test-network-function/cnf-certsuite-operator/api/v1alpha1"
+	cnfcertjob "github.com/test-network-function/cnf-certsuite-operator/controllers/cnf-cert-job"
+	"github.com/test-network-function/cnf-certsuite-operator/controllers/definitions"
+	controllerlogger "github.com/test-network-function/cnf-certsuite-operator/controllers/logger"
 )
 
 var sideCarImage string
@@ -62,12 +62,12 @@ const (
 	defaultCnfCertSuiteTimeout = time.Hour
 )
 
-// +kubebuilder:rbac:groups=cnf-certifications.redhat.com,namespace=cnf-certification-operator,resources=cnfcertificationsuiteruns,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=cnf-certifications.redhat.com,namespace=cnf-certification-operator,resources=cnfcertificationsuiteruns/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=cnf-certifications.redhat.com,namespace=cnf-certification-operator,resources=cnfcertificationsuiteruns/finalizers,verbs=update
+// +kubebuilder:rbac:groups=cnf-certifications.redhat.com,namespace=cnf-certsuite-operator,resources=cnfcertificationsuiteruns,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=cnf-certifications.redhat.com,namespace=cnf-certsuite-operator,resources=cnfcertificationsuiteruns/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=cnf-certifications.redhat.com,namespace=cnf-certsuite-operator,resources=cnfcertificationsuiteruns/finalizers,verbs=update
 
-// +kubebuilder:rbac:groups="",namespace=cnf-certification-operator,resources=pods,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups="",namespace=cnf-certification-operator,resources=secrets;configMaps,verbs=get;list;watch
+// +kubebuilder:rbac:groups="",namespace=cnf-certsuite-operator,resources=pods,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",namespace=cnf-certsuite-operator,resources=secrets;configMaps,verbs=get;list;watch
 
 func ignoreUpdatePredicate() predicate.Predicate {
 	return predicate.Funcs{

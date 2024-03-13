@@ -9,11 +9,11 @@ metadata:
           "kind": "CnfCertificationSuiteRun",
           "metadata": {
             "labels": {
-              "app.kubernetes.io/created-by": "tnf-op",
+              "app.kubernetes.io/created-by": "cnf-certsuite-operator",
               "app.kubernetes.io/instance": "cnfcertificationsuiterun-sample",
               "app.kubernetes.io/managed-by": "kustomize",
               "app.kubernetes.io/name": "cnfcertificationsuiterun",
-              "app.kubernetes.io/part-of": "tnf-op"
+              "app.kubernetes.io/part-of": "cnf-certsuite-operator"
             },
             "name": "cnfcertificationsuiterun-sample",
             "namespace": "cnf-certsuite-operator"
@@ -30,10 +30,10 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2024-03-12T12:18:21Z"
+    createdAt: "2024-03-13T11:10:02Z"
     operators.operatorframework.io/builder: operator-sdk-v1.33.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
-  name: tnf-op.v0.0.1
+  name: cnf-certsuite-operator.v0.0.1
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -83,11 +83,11 @@ spec:
       deployments:
       - label:
           app.kubernetes.io/component: manager
-          app.kubernetes.io/created-by: tnf-op
+          app.kubernetes.io/created-by: cnf-certsuite-operator
           app.kubernetes.io/instance: controller-manager
           app.kubernetes.io/managed-by: kustomize
           app.kubernetes.io/name: deployment
-          app.kubernetes.io/part-of: tnf-op
+          app.kubernetes.io/part-of: cnf-certsuite-operator
           control-plane: controller-manager
         name: cnf-certsuite-controller-manager
         spec:
@@ -297,8 +297,8 @@ spec:
   - cloud
   - telco
   links:
-  - name: Tnf Op
-    url: https://tnf-op.domain
+  - name: CNF Certification Suite Operator
+    url: https://github.com/test-network-function/cnf-certsuite-operator
   maturity: alpha
   provider:
     name: Red Hat

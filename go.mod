@@ -1,4 +1,4 @@
-module github.com/greyerof/cnf-certification-operator
+module github.com/test-network-function/cnf-certsuite-operator
 
 go 1.19
 

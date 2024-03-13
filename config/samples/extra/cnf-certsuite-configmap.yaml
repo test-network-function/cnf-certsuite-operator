@@ -3,7 +3,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: cnf-certsuite-config
-  namespace: cnf-certification-operator
+  namespace: cnf-certsuite-operator
 data:
   tnf_config.yaml: |
     targetNameSpaces:

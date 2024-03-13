@@ -5,8 +5,8 @@ metadata:
     app.kubernetes.io/name: clusterrolebinding
     app.kubernetes.io/instance: manager-rolebinding
     app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: tnf-op
-    app.kubernetes.io/part-of: tnf-op
+    app.kubernetes.io/created-by: cnf-certsuite-operator
+    app.kubernetes.io/part-of: cnf-certsuite-operator
     app.kubernetes.io/managed-by: kustomize
   name: manager-rolebinding
 roleRef:

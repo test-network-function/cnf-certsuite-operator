@@ -4,7 +4,7 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Basic Install
-  name: tnf-op.v0.0.0
+  name: cnf-certsuite-operator.v0.0.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -41,8 +41,8 @@ spec:
   - cloud
   - telco
   links:
-  - name: Tnf Op
-    url: https://tnf-op.domain
+  - name: CNF Certification Suite Operator
+    url: https://github.com/test-network-function/cnf-certsuite-operator
   maturity: alpha
   provider:
     name: Red Hat
