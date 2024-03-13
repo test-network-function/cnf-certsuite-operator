@@ -33,8 +33,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	cnfcertificationsv1alpha1 "github.com/greyerof/cnf-certification-operator/api/v1alpha1"
-	"github.com/greyerof/cnf-certification-operator/controllers"
+	cnfcertificationsv1alpha1 "github.com/test-network-function/cnf-certsuite-operator/api/v1alpha1"
+	"github.com/test-network-function/cnf-certsuite-operator/controllers"
 	//+kubebuilder:scaffold:imports
 )
 

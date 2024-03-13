@@ -6,5 +6,5 @@ metadata:
 spec:
   sourceNamespace: cnf-certsuite-operator
   channel: alpha
-  name: tnf-op
+  name: cnf-certsuite-operator
   source: cnf-certsuite-operator-olm-catalog
