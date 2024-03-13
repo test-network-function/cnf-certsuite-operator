@@ -30,7 +30,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2024-03-13T09:49:06Z"
+    createdAt: "2024-03-13T11:10:02Z"
     operators.operatorframework.io/builder: operator-sdk-v1.33.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
   name: cnf-certsuite-operator.v0.0.1
@@ -155,8 +155,8 @@ spec:
                     fieldRef:
                       fieldPath: metadata.annotations['olm.targetNamespaces']
                 - name: SIDECAR_APP_IMG
-                  value: sidecar:latest
-                image: controller:latest
+                  value: quay.io/testnetworkfunction/cnf-certsuite-operator-sidecar:v0.0.1
+                image: quay.io/testnetworkfunction/cnf-certsuite-operator:v0.0.1
                 imagePullPolicy: IfNotPresent
                 livenessProbe:
                   httpGet:
@@ -297,8 +297,8 @@ spec:
   - cloud
   - telco
   links:
-  - name: Tnf Op
-    url: https://cnf-certsuite-operator.domain
+  - name: CNF Certification Suite Operator
+    url: https://github.com/test-network-function/cnf-certsuite-operator
   maturity: alpha
   provider:
     name: Red Hat
