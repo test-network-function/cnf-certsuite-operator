@@ -1,4 +1,13 @@
 ## Append samples of your project ##
 resources:
 - cnf-certifications_v1alpha1_cnfcertificationsuiterun.yaml
+
+## Uncomment this two files (configmap+secret) to create a runnable test CR in the test namespace.
+## Then run them with: oc kustomize config/samples | oc apply -f -
+#- extra/cnf-certsuite-configmap.yaml
+#- extra/cnf-certsuite-preflight-secret.yaml
+
 #+kubebuilder:scaffold:manifestskustomizesamples
+
+namespace: cnf-certsuite-operator
+

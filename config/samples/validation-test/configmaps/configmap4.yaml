@@ -1,0 +1,11 @@
+# Invalid ConfigMap for testing purposes.
+# Invalidation reason: 'tnf_config.yaml' field doesn't exist
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cnf-certsuite-invalid-config4
+  namespace: cnf-certsuite-operator
+data:
+  

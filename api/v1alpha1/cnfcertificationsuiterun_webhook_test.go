@@ -17,7 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/ginkgo/v2" //nolint:revive
 )
 
 var _ = Describe("CnfCertificationSuiteRun Webhook", func() {

@@ -4,6 +4,7 @@
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
 VERSION ?= 0.0.1
+BASH_SCRIPTS=$(shell find . -name "*.sh" -not -path "./.git/*")
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
@@ -28,7 +29,7 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 # This variable is used to construct full image tags for bundle and catalog images.
 #
 # For example, running 'make bundle-build bundle-push catalog-build catalog-push' will build and push both
-# redhat.com/cnf-certsuite-operator-bundle:$VERSION and redhat.com/cnf-certsuite-operator-catalog:$VERSION.
+# redhat.com/cnf-certsuite-operator-bundle:$VERSION and redhat.com/tnf-op-catalog:$VERSION.
 IMAGE_TAG_BASE ?= redhat.com/cnf-certsuite-operator
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
@@ -52,6 +53,7 @@ OPERATOR_SDK_VERSION ?= v1.34.1
 
 # Image URL to use all building/pushing image targets
 IMG ?= controller:latest
+SIDECAR_IMG ?= sidecar:latest
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.28.3
 
@@ -73,7 +75,7 @@ CONTAINER_TOOL ?= docker
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
-.PHONY: all
+.PHONY: all clean
 all: build
 
 ##@ General
@@ -119,9 +121,9 @@ test: manifests generate fmt vet envtest ## Run tests.
 .PHONY: test-e2e  # Run the e2e tests against a Kind k8s instance that is spun up.
 test-e2e:
 	go test ./test/e2e/ -v -ginkgo.v
-	
+
 GOLANGCI_LINT = $(shell pwd)/bin/golangci-lint
-GOLANGCI_LINT_VERSION ?= v1.54.2
+GOLANGCI_LINT_VERSION ?= v1.55.2
 golangci-lint:
 	@[ -f $(GOLANGCI_LINT) ] || { \
 	set -e ;\
@@ -130,7 +132,14 @@ golangci-lint:
 
 .PHONY: lint
 lint: golangci-lint ## Run golangci-lint linter & yamllint
-	$(GOLANGCI_LINT) run
+	$(GOLANGCI_LINT) run --timeout 10m0s
+	checkmake --config=.checkmake Makefile
+	hadolint Dockerfile
+	# shfmt -d *.sh script
+	typos
+	markdownlint '**/*.md'
+	yamllint --no-warnings .
+	shellcheck --format=gcc ${BASH_SCRIPTS}
 
 .PHONY: lint-fix
 lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
@@ -190,11 +199,14 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 
 .PHONY: deploy
 deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default | $(KUBECTL) apply -f -
+	cd config/manager \
+	  && $(KUSTOMIZE) edit set image controller=${IMG} \
+      && $(KUSTOMIZE) edit add patch --kind Deployment --patch "[{\"op\": \"replace\", \"path\": \"/spec/template/spec/containers/0/env/1\", \"value\": {\"name\": \"SIDECAR_APP_IMG\", \"value\": \"${SIDECAR_IMG}\"} }]"
+	cd config/crd && $(KUSTOMIZE) edit add patch --path patches/cainjection_in_cnfcertificationsuiteruns.yaml
+	$(KUSTOMIZE) build config/default/manual-deploy | $(KUBECTL) apply -f -
 
 .PHONY: undeploy
-undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+undeploy: kustomize ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/default | $(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f -
 
 ##@ Build Dependencies
@@ -251,11 +263,15 @@ OPERATOR_SDK = $(shell which operator-sdk)
 endif
 endif
 
+## IMPORTANT: The serviceaccount "cnf-certsuite-cluster-access" is needed by the CNF's cert pod. The prefix "cnf-certsuite" must match the one in
+## config/default/kustomization.yaml field "namePrefix".
 .PHONY: bundle
-bundle: manifests kustomize operator-sdk ## Generate bundle manifests and metadata, then validate generated files.
+bundle: manifests kustomize ## Generate bundle manifests and metadata, then validate generated files.
 	$(OPERATOR_SDK) generate kustomize manifests -q
-	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
-	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle $(BUNDLE_GEN_FLAGS)
+	cd config/manager \
+	  && $(KUSTOMIZE) edit set image controller=${IMG} \
+      && $(KUSTOMIZE) edit add patch --kind Deployment --patch "[{\"op\": \"replace\", \"path\": \"/spec/template/spec/containers/0/env/1\", \"value\": {\"name\": \"SIDECAR_APP_IMG\", \"value\": \"${SIDECAR_IMG}\"} }]"
+	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle $(BUNDLE_GEN_FLAGS) --extra-service-accounts cnf-certsuite-cluster-access
 	$(OPERATOR_SDK) bundle validate ./bundle
 
 .PHONY: bundle-build
@@ -306,3 +322,28 @@ catalog-build: opm ## Build a catalog image.
 .PHONY: catalog-push
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
+
+.PHONY: deploy-samples
+deploy-samples: kustomize ## Deploy the sample CR, configmap and secret in the cluster.
+	cd config/samples \
+	  && $(KUSTOMIZE) edit add resource "extra/cnf-certsuite-configmap.yaml" \
+	  && $(KUSTOMIZE) edit add resource "extra/cnf-certsuite-preflight-secret.yaml"
+	$(KUBECTL) kustomize config/samples | $(KUBECTL) apply -f -
+
+# Install the operator using OLM subscription. It will create the namespace ${OLM_INSTALL_NAMESPACE}, which
+# is defaulted to "cnf-certsuite-operator" if not set, and deploys the CatalogSource, OperatorGroup and
+# and the subscription, using the operator found in the "alpha" channel of the catalog ${OLM_INSTALL_IMG_CATALOG}.
+OLM_INSTALL_IMG_CATALOG ?= quay.io/testnetworkfunction/cnf-certsuite-operator-catalog:latest
+OLM_INSTALL_NAMESPACE ?= cnf-certsuite-operator
+.PHONY: olm-install
+olm-install: kustomize ## Installs the operator using OLM subscription.
+	cd config/samples/olm \
+	  && $(KUSTOMIZE) edit set namespace $(OLM_INSTALL_NAMESPACE) \
+	  && $(KUSTOMIZE) edit add patch --kind CatalogSource --patch "[{\"op\": \"replace\", \"path\": \"/spec/image\",              \"value\": \"$(OLM_INSTALL_IMG_CATALOG)\" }]" \
+	  && $(KUSTOMIZE) edit add patch --kind Subscription  --patch "[{\"op\": \"replace\", \"path\": \"/spec/sourceNamespace\",    \"value\": \"$(OLM_INSTALL_NAMESPACE)\" }]"   \
+	  && $(KUSTOMIZE) edit add patch --kind OperatorGroup --patch "[{\"op\": \"replace\", \"path\": \"/spec/targetNamespaces/0\", \"value\": \"$(OLM_INSTALL_NAMESPACE)\" }]"
+	$(KUBECTL) kustomize config/samples/olm | $(KUBECTL) apply -f -
+
+.PHONY: olm-uninstall
+olm-uninstall: kustomize ## Uninstall the operator that was installed with "make olm-install"
+	$(KUBECTL) kustomize config/samples/olm | $(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f -

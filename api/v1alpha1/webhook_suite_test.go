@@ -26,8 +26,8 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo/v2" //nolint:revive
+	. "github.com/onsi/gomega"    //nolint:revive
 
 	admissionv1 "k8s.io/api/admission/v1"
 	//+kubebuilder:scaffold:imports
@@ -128,7 +128,7 @@ var _ = BeforeSuite(func() {
 	dialer := &net.Dialer{Timeout: time.Second}
 	addrPort := fmt.Sprintf("%s:%d", webhookInstallOptions.LocalServingHost, webhookInstallOptions.LocalServingPort)
 	Eventually(func() error {
-		conn, err := tls.DialWithDialer(dialer, "tcp", addrPort, &tls.Config{InsecureSkipVerify: true})
+		conn, err := tls.DialWithDialer(dialer, "tcp", addrPort, &tls.Config{InsecureSkipVerify: true}) //nolint:gosec
 		if err != nil {
 			return err
 		}

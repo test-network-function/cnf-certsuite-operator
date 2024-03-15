@@ -8,5 +8,14 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: cnf-certsuite-operator
   name: cnfcertificationsuiterun-sample
+  namespace: cnf-certsuite-operator
 spec:
   # TODO(user): Add fields here
+  labelsFilter: "observability"
+  logLevel: "info"
+  timeout: "2h"
+
+  configMapName: "cnf-certsuite-config"
+  preflightSecretName : "cnf-certsuite-preflight-dockerconfig"
+  enableDataCollection: false
+  showAllResultsLogs: false

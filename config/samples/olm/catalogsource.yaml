@@ -1,0 +1,12 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: cnf-certsuite-operator-olm-catalog
+  namespace: cnf-certsuite-operator
+spec:
+  sourceType: grpc
+  image: quay.io/testnetworkfunction/cnf-certsuite-operator-catalog:v0.0.1
+  displayName: CNF Certification Suite OLM Test Catalog
+  publisher: RedHat.com
+  grpcPodConfig:
+    securityContextConfig: restricted

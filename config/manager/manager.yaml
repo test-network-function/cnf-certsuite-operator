@@ -70,8 +70,16 @@ spec:
         - /manager
         args:
         - --leader-elect
+        env:
+        - name: WATCH_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: SIDECAR_APP_IMG
+          value: quay.io/testnetworkfunction/cnf-certsuite-operator-sidecar:v0.0.1
         image: controller:latest
         name: manager
+        imagePullPolicy: IfNotPresent
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

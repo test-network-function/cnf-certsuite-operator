@@ -1,0 +1,17 @@
+@startuml "Side car action"
+
+start
+note right
+  claim.json location 
+  env var must be set
+end note
+
+while (is claim.json ready?) is (<color:red>no)
+    :wait 5 secs;
+endwhile (<color:green>yes)
+
+:parse claim.json;
+:update CnfCertificationSuiteRun;
+stop
+
+@enduml

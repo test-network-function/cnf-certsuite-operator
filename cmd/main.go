@@ -19,6 +19,7 @@ package main
 import (
 	"crypto/tls"
 	"flag"
+	"fmt"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -36,6 +37,7 @@ import (
 
 	cnfcertificationsv1alpha1 "github.com/test-network-function/cnf-certsuite-operator/api/v1alpha1"
 	"github.com/test-network-function/cnf-certsuite-operator/internal/controller"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -51,6 +53,21 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
+// getWatchNamespace returns the Namespace the operator should be watching for changes
+func getWatchNamespace() (string, error) {
+	// WatchNamespaceEnvVar is the constant for env variable WATCH_NAMESPACE
+	// which specifies the Namespace to watch.
+	// An empty value means the operator is running with cluster scope.
+	var watchNamespaceEnvVar = "WATCH_NAMESPACE"
+
+	ns, found := os.LookupEnv(watchNamespaceEnvVar)
+	if !found {
+		return "", fmt.Errorf("%s must be set", watchNamespaceEnvVar)
+	}
+	return ns, nil
+}
+
+//nolint:funlen
 func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
@@ -73,6 +90,12 @@ func main() {
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+
+	watchNamespace, err := getWatchNamespace()
+	if err != nil {
+		setupLog.Error(err, "unable to get WatchNamespace, "+
+			"the manager will watch and manage resources in all namespaces")
+	}
 
 	// if the enable-http2 flag is false (the default), http/2 should be disabled
 	// due to its vulnerabilities. More specifically, disabling http/2 will
@@ -116,6 +139,11 @@ func main() {
 		// if you are doing or is intended to do any operation such as perform cleanups
 		// after the manager stops then its usage might be unsafe.
 		// LeaderElectionReleaseOnCancel: true,
+		Cache: cache.Options{
+			DefaultNamespaces: map[string]cache.Config{
+				watchNamespace: {},
+			},
+		},
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
