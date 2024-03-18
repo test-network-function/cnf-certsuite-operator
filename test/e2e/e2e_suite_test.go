@@ -13,3 +13,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
+package e2e
+
+import (
+	"fmt"
+	"testing"
+
+	. "github.com/onsi/ginkgo/v2" //nolint:revive
+	. "github.com/onsi/gomega"    //nolint:revive
+)
+
+// Run e2e tests using the Ginkgo runner.
+func TestE2E(t *testing.T) {
+	RegisterFailHandler(Fail)
+	fmt.Fprintf(GinkgoWriter, "Starting cnf-certsuite-operator suite\n")
+	RunSpecs(t, "e2e suite")
+}

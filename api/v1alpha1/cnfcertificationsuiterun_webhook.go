@@ -1,5 +1,5 @@
 /*
-Copyright 2023.
+Copyright 2024.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,11 +24,11 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // log is for logging in this package.
@@ -45,26 +45,11 @@ var (
 )
 
 func (r *CnfCertificationSuiteRun) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	_, err := createClient()
-	if err != nil {
-		return err
-	}
+	c = mgr.GetClient()
+
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()
-}
-
-func createClient() (client.Client, error) {
-	kubeconfig, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, fmt.Errorf("error getting OpenShift config: %v", err)
-	}
-
-	c, err = client.New(kubeconfig, client.Options{})
-	if err != nil {
-		return nil, fmt.Errorf("error creating client: %v", err)
-	}
-	return c, nil
 }
 
 // TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -76,25 +61,25 @@ func createClient() (client.Client, error) {
 var _ webhook.Validator = &CnfCertificationSuiteRun{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *CnfCertificationSuiteRun) ValidateCreate() error {
+func (r *CnfCertificationSuiteRun) ValidateCreate() (admission.Warnings, error) {
 	logger.Info("validate create", "name", r.Name)
 
 	err := r.validateConfigMap()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = r.validatePreflightSecret()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = r.validateLogLevel()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return nil, nil
 }
 
 func (r *CnfCertificationSuiteRun) validateConfigMap() error {
@@ -173,17 +158,17 @@ func (r *CnfCertificationSuiteRun) validateLogLevel() error {
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 //
 //nolint:revive
-func (r *CnfCertificationSuiteRun) ValidateUpdate(old runtime.Object) error {
+func (r *CnfCertificationSuiteRun) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
 	logger.Info("validate update", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
-	return nil
+	return nil, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *CnfCertificationSuiteRun) ValidateDelete() error {
+func (r *CnfCertificationSuiteRun) ValidateDelete() (admission.Warnings, error) {
 	logger.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
-	return nil
+	return nil, nil
 }

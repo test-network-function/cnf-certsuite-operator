@@ -1,5 +1,5 @@
 /*
-Copyright 2023.
+Copyright 2024.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package controller
 
 import (
 	"context"
@@ -35,9 +35,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	cnfcertificationsv1alpha1 "github.com/test-network-function/cnf-certsuite-operator/api/v1alpha1"
-	cnfcertjob "github.com/test-network-function/cnf-certsuite-operator/controllers/cnf-cert-job"
-	"github.com/test-network-function/cnf-certsuite-operator/controllers/definitions"
-	controllerlogger "github.com/test-network-function/cnf-certsuite-operator/controllers/logger"
+	cnfcertjob "github.com/test-network-function/cnf-certsuite-operator/internal/controller/cnf-cert-job"
+	"github.com/test-network-function/cnf-certsuite-operator/internal/controller/definitions"
+	controllerlogger "github.com/test-network-function/cnf-certsuite-operator/internal/controller/logger"
 )
 
 var sideCarImage string
@@ -50,7 +50,7 @@ type CnfCertificationSuiteRunReconciler struct {
 
 var (
 	// certificationRuns maps a certificationRun to a pod name
-	certificationRuns map[types.NamespacedName]string
+	certificationRuns map[types.NamespacedName]string = map[types.NamespacedName]string{}
 	// Holds an autoincremental CNF Cert Suite pod id
 	certSuitePodID int
 	// sets controller's logger.
@@ -290,7 +290,6 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 // SetupWithManager sets up the controller with the Manager.
 func (r *CnfCertificationSuiteRunReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	logger.Info("Setting up CnfCertificationSuiteRunReconciler's manager.")
-	certificationRuns = map[types.NamespacedName]string{}
 
 	var found bool
 	sideCarImage, found = os.LookupEnv(definitions.SideCarImageEnvVar)
