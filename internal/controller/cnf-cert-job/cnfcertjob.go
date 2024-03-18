@@ -5,6 +5,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/test-network-function/cnf-certsuite-operator/internal/controller/definitions"
 )
@@ -240,6 +241,19 @@ func WithEnableDataCollection(enableDataCollection string) func(*corev1.Pod) err
 			return fmt.Errorf("cnf cert suite Container is not found in pod %s", p.Name)
 		}
 		cnfCertSuiteContainer.Env = append(cnfCertSuiteContainer.Env, envVar)
+		return nil
+	}
+}
+
+func WithOwnerReference(ownerUID types.UID, ownerName, ownerKind, ownerAPIVersion string) func(*corev1.Pod) error {
+	return func(p *corev1.Pod) error {
+		ownerReference := &metav1.OwnerReference{
+			APIVersion: ownerAPIVersion,
+			Kind:       ownerKind,
+			Name:       ownerName,
+			UID:        ownerUID,
+		}
+		p.ObjectMeta.OwnerReferences = []metav1.OwnerReference{*ownerReference}
 		return nil
 	}
 }
