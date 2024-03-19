@@ -44,6 +44,8 @@ type CnfCertificationSuiteRunSpec struct {
 	EnableDataCollection bool `json:"enableDataCollection,omitempty"`
 	// ShowAllResultsLogs is set to true for showing all test results logs, and not only of failed tcs.
 	ShowAllResultsLogs bool `json:"showAllResultsLogs,omitempty"`
+	// ShowCompliantResourcesAlways is set true for showing compliant resources for all ran tcs, and not only of failed tcs.
+	ShowCompliantResourcesAlways bool `json:"showCompliantResourcesAlways,omitempty"`
 }
 
 type StatusPhase string
@@ -106,12 +108,16 @@ type CnfCertificationSuiteReport struct {
 	Results             []TestCaseResult                         `json:"results"`
 }
 
+type TargetResource map[string]string
+
 // TestCaseResult holds a test case result
 type TestCaseResult struct {
-	TestCaseName string `json:"testCaseName"`
-	Result       string `json:"result"`
-	Reason       string `json:"reason,omitempty"`
-	Logs         string `json:"logs,omitempty"`
+	TestCaseName string           `json:"testCaseName"`
+	Result       string           `json:"result"`
+	Reason       string           `json:"reason,omitempty"`
+	Logs         string           `json:"logs,omitempty"`
+	Compliant    []TargetResource `json:"compliant,omitempty"`
+	NonCompliant []TargetResource `json:"nonCompliant,omitempty"`
 }
 
 type CnfCertificationSuiteReportStatusSummary struct {

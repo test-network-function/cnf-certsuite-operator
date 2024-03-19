@@ -167,6 +167,9 @@ It can be modified by changing manually the `labelsFilter` of the [sample CR](ht
         - **showAllResultsLogs**: Set to "true" to show all result's logs,
         and not only logs of failed test cases.
         This field is set to "false" by default.
+        - **showCompliantResourcesAlways**: Set to "true" to show compliant
+        resources of all results. and not only compliant and non-compliant
+        resources of failed test cases. This field is set to "false" by default.
 
         See a [sample CnfCertificationSuiteRun CR](https://github.com/greyerof/tnf-op/blob/main/config/samples/cnf-certifications_v1alpha1_cnfcertificationsuiterun.yaml)
 

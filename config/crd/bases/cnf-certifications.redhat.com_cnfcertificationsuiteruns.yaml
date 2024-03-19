@@ -70,6 +70,10 @@ spec:
                 description: ShowAllResultsLogs is set to true for showing all test
                   results logs, and not only of failed tcs.
                 type: boolean
+              showCompliantResourcesAlways:
+                description: ShowCompliantResourcesAlways is set true for showing
+                  compliant resources for all ran tcs, and not only of failed tcs.
+                type: boolean
               timeout:
                 description: Total timeout for the CNF Cert Suite to run.
                 type: string
@@ -182,8 +186,20 @@ spec:
                     items:
                       description: TestCaseResult holds a test case result
                       properties:
+                        compliant:
+                          items:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          type: array
                         logs:
                           type: string
+                        nonCompliant:
+                          items:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          type: array
                         reason:
                           type: string
                         result:

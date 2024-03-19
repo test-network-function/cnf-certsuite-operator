@@ -43,6 +43,7 @@ type TestCaseResult struct {
 		Remediation           string `json:"remediation"`
 	} `json:"catalogInfo"`
 	CategoryClassification map[string]string `json:"categoryClassification"`
+	CheckDetails           string            `json:"checkDetails"`
 	Duration               int               `json:"duration"`
 	EndTime                string            `json:"endTime"`
 	FailureLineContent     string            `json:"failureLineContent"`

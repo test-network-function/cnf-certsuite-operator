@@ -1,6 +1,9 @@
 package cnfcertsuitereport
 
 import (
+	"encoding/json"
+
+	"github.com/sirupsen/logrus"
 	cnfcertificationsv1alpha1 "github.com/test-network-function/cnf-certsuite-operator/api/v1alpha1"
 	"github.com/test-network-function/cnf-certsuite-operator/cnf-cert-sidecar/app/claim"
 	corev1 "k8s.io/api/core/v1"
@@ -13,6 +16,11 @@ type Config struct {
 	OcpVersion             string
 	CnfCertSuiteVersion    string
 	Cnf                    cnfcertificationsv1alpha1.CnfTargets
+}
+
+type CheckDetails struct {
+	Compliant    []map[string]interface{} `json:"CompliantObjectsOut"`
+	NonCompliant []map[string]interface{} `json:"NonCompliantObjectsOut"`
 }
 
 func addNamespacesToCnfSpecField(cnf *cnfcertificationsv1alpha1.CnfTargets, namespaces []string) {
@@ -104,12 +112,17 @@ func SetRunCRStatus(runCR *cnfcertificationsv1alpha1.CnfCertificationSuiteRun, c
 		case "skipped":
 			skippedTests++
 			testCaseResult.Reason = tcResult.SkipReason
-		case "failed":
+		case "failed": //nolint:goconst
 			failedTests++
 			testCaseResult.Reason = tcResult.FailureReason
 			testCaseResult.Logs = tcResult.CapturedTestOutput
 		case "error": //nolint:goconst
 			erroredTests++
+		}
+
+		// Always show failed compliant and non-compliant resources
+		if tcResult.CheckDetails != "" && (tcResult.State == "failed" || runCR.Spec.ShowCompliantResourcesAlways) {
+			setCheckDetails(tcName, tcResult.CheckDetails, &testCaseResult)
 		}
 
 		if runCR.Spec.ShowAllResultsLogs {
@@ -143,4 +156,35 @@ func SetRunCRStatus(runCR *cnfcertificationsv1alpha1.CnfCertificationSuiteRun, c
 	default: // all tests who ran have passed
 		runCR.Status.Report.Verdict = "pass"
 	}
+}
+
+func setCheckDetails(tcName, checkDetailsStr string, testCaseResult *cnfcertificationsv1alpha1.TestCaseResult) {
+	checkDetails := CheckDetails{}
+	err := json.Unmarshal([]byte(checkDetailsStr), &checkDetails)
+	if err != nil {
+		logrus.Errorf("error unmarsling check details of tc %s: %s", tcName, err)
+	}
+
+	var compliant []cnfcertificationsv1alpha1.TargetResource
+	for i, c := range checkDetails.Compliant {
+		compliant = append(compliant, map[string]string{})
+		objectFieldsKeys := c["ObjectFieldsKeys"].([]interface{})
+		objectFieldsValues := c["ObjectFieldsValues"].([]interface{})
+		for j, key := range objectFieldsKeys {
+			compliant[i][key.(string)] = objectFieldsValues[j].(string)
+		}
+	}
+
+	var nonCompliant []cnfcertificationsv1alpha1.TargetResource
+	for i, c := range checkDetails.NonCompliant {
+		nonCompliant = append(nonCompliant, map[string]string{})
+		objectFieldsKeys := c["ObjectFieldsKeys"].([]interface{})
+		objectFieldsValues := c["ObjectFieldsValues"].([]interface{})
+		for j, key := range objectFieldsKeys {
+			nonCompliant[i][key.(string)] = objectFieldsValues[j].(string)
+		}
+	}
+
+	testCaseResult.Compliant = compliant
+	testCaseResult.NonCompliant = nonCompliant
 }
