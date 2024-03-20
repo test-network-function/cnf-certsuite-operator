@@ -58,6 +58,20 @@ const (
 	StatusPhaseCertSuiteError       = "CertSuiteError"
 )
 
+const (
+	StatusStatePassed  = "passed"
+	StatusStateSkipped = "skipped"
+	StatusStateFailed  = "failed"
+	StatusStateError   = "error"
+)
+
+const (
+	StatusVerdictPass  = "pass"
+	StatusVerdictSkip  = "skip"
+	StatusVerdictFail  = "fail"
+	StatusVerdictError = "error"
+)
+
 // CnfCertificationSuiteRunStatus defines the observed state of CnfCertificationSuiteRun
 type CnfCertificationSuiteRunStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
@@ -100,6 +114,7 @@ type CnfCertificationSuiteReport struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
+	//+kubebuilder:validation:Enum=pass;skip;fail;error
 	Verdict             string                                   `json:"verdict"`
 	OcpVersion          string                                   `json:"ocpVersion"`
 	CnfCertSuiteVersion string                                   `json:"cnfCertSuiteVersion"`
@@ -110,14 +125,19 @@ type CnfCertificationSuiteReport struct {
 
 type TargetResource map[string]string
 
-// TestCaseResult holds a test case result
-type TestCaseResult struct {
-	TestCaseName string           `json:"testCaseName"`
-	Result       string           `json:"result"`
-	Reason       string           `json:"reason,omitempty"`
-	Logs         string           `json:"logs,omitempty"`
+type TargetResources struct {
 	Compliant    []TargetResource `json:"compliant,omitempty"`
 	NonCompliant []TargetResource `json:"nonCompliant,omitempty"`
+}
+
+// TestCaseResult holds a test case result
+type TestCaseResult struct {
+	TestCaseName string `json:"testCaseName"`
+	//+kubebuilder:validation:Enum=passed;skipped;failed;error
+	Result          string           `json:"result"`
+	Reason          string           `json:"reason,omitempty"`
+	Logs            string           `json:"logs,omitempty"`
+	TargetResources *TargetResources `json:"targetResources,omitempty"`
 }
 
 type CnfCertificationSuiteReportStatusSummary struct {

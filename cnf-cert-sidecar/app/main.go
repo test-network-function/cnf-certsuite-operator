@@ -81,7 +81,7 @@ func handleClaimFile(k8sClient client.Client) {
 			logrus.Fatalf("Failed to update CnfCertificationSuiteRun.Status object object: %v", err)
 		}
 
-		logrus.Infof("CnfCertificationSuiteRun CR's status updated successfully with results:\n%s", runCR.Status.Report.Results)
+		logrus.Infof("CnfCertificationSuiteRun CR's status updated successfully with results:\n%v", runCR.Status.Report.Results)
 		break
 	}
 }

@@ -186,24 +186,32 @@ spec:
                     items:
                       description: TestCaseResult holds a test case result
                       properties:
-                        compliant:
-                          items:
-                            additionalProperties:
-                              type: string
-                            type: object
-                          type: array
                         logs:
                           type: string
-                        nonCompliant:
-                          items:
-                            additionalProperties:
-                              type: string
-                            type: object
-                          type: array
                         reason:
                           type: string
                         result:
+                          enum:
+                          - passed
+                          - skipped
+                          - failed
+                          - error
                           type: string
+                        targetResources:
+                          properties:
+                            compliant:
+                              items:
+                                additionalProperties:
+                                  type: string
+                                type: object
+                              type: array
+                            nonCompliant:
+                              items:
+                                additionalProperties:
+                                  type: string
+                                type: object
+                              type: array
+                          type: object
                         testCaseName:
                           type: string
                       required:
@@ -231,6 +239,11 @@ spec:
                     - total
                     type: object
                   verdict:
+                    enum:
+                    - pass
+                    - skip
+                    - fail
+                    - error
                     type: string
                 required:
                 - cnfCertSuiteVersion
