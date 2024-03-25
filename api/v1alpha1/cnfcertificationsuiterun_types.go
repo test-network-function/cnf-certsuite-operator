@@ -44,6 +44,8 @@ type CnfCertificationSuiteRunSpec struct {
 	EnableDataCollection bool `json:"enableDataCollection,omitempty"`
 	// ShowAllResultsLogs is set to true for showing all test results logs, and not only of failed tcs.
 	ShowAllResultsLogs bool `json:"showAllResultsLogs,omitempty"`
+	// ShowCompliantResourcesAlways is set true for showing compliant resources for all ran tcs, and not only of failed tcs.
+	ShowCompliantResourcesAlways bool `json:"showCompliantResourcesAlways,omitempty"`
 }
 
 type StatusPhase string
@@ -54,6 +56,20 @@ const (
 	StatusPhaseCertSuiteRunning     = "CertSuiteRunning"
 	StatusPhaseCertSuiteFinished    = "CertSuiteFinished"
 	StatusPhaseCertSuiteError       = "CertSuiteError"
+)
+
+const (
+	StatusStatePassed  = "passed"
+	StatusStateSkipped = "skipped"
+	StatusStateFailed  = "failed"
+	StatusStateError   = "error"
+)
+
+const (
+	StatusVerdictPass  = "pass"
+	StatusVerdictSkip  = "skip"
+	StatusVerdictFail  = "fail"
+	StatusVerdictError = "error"
 )
 
 // CnfCertificationSuiteRunStatus defines the observed state of CnfCertificationSuiteRun
@@ -98,6 +114,7 @@ type CnfCertificationSuiteReport struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
+	//+kubebuilder:validation:Enum=pass;skip;fail;error
 	Verdict             string                                   `json:"verdict"`
 	OcpVersion          string                                   `json:"ocpVersion"`
 	CnfCertSuiteVersion string                                   `json:"cnfCertSuiteVersion"`
@@ -106,12 +123,21 @@ type CnfCertificationSuiteReport struct {
 	Results             []TestCaseResult                         `json:"results"`
 }
 
+type TargetResource map[string]string
+
+type TargetResources struct {
+	Compliant    []TargetResource `json:"compliant,omitempty"`
+	NonCompliant []TargetResource `json:"nonCompliant,omitempty"`
+}
+
 // TestCaseResult holds a test case result
 type TestCaseResult struct {
 	TestCaseName string `json:"testCaseName"`
-	Result       string `json:"result"`
-	Reason       string `json:"reason,omitempty"`
-	Logs         string `json:"logs,omitempty"`
+	//+kubebuilder:validation:Enum=passed;skipped;failed;error
+	Result          string           `json:"result"`
+	Reason          string           `json:"reason,omitempty"`
+	Logs            string           `json:"logs,omitempty"`
+	TargetResources *TargetResources `json:"targetResources,omitempty"`
 }
 
 type CnfCertificationSuiteReportStatusSummary struct {

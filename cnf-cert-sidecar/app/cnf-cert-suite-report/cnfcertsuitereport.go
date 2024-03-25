@@ -1,6 +1,9 @@
 package cnfcertsuitereport
 
 import (
+	"encoding/json"
+
+	"github.com/sirupsen/logrus"
 	cnfcertificationsv1alpha1 "github.com/test-network-function/cnf-certsuite-operator/api/v1alpha1"
 	"github.com/test-network-function/cnf-certsuite-operator/cnf-cert-sidecar/app/claim"
 	corev1 "k8s.io/api/core/v1"
@@ -13,6 +16,11 @@ type Config struct {
 	OcpVersion             string
 	CnfCertSuiteVersion    string
 	Cnf                    cnfcertificationsv1alpha1.CnfTargets
+}
+
+type CheckDetails struct {
+	Compliant    []map[string]interface{} `json:"CompliantObjectsOut"`
+	NonCompliant []map[string]interface{} `json:"NonCompliantObjectsOut"`
 }
 
 func addNamespacesToCnfSpecField(cnf *cnfcertificationsv1alpha1.CnfTargets, namespaces []string) {
@@ -99,19 +107,24 @@ func SetRunCRStatus(runCR *cnfcertificationsv1alpha1.CnfCertificationSuiteRun, c
 		}
 
 		switch tcResult.State {
-		case "passed":
+		case cnfcertificationsv1alpha1.StatusStatePassed:
 			passedTests++
-		case "skipped":
+		case cnfcertificationsv1alpha1.StatusStateSkipped:
 			skippedTests++
 			testCaseResult.Reason = tcResult.SkipReason
-		case "failed":
+		case cnfcertificationsv1alpha1.StatusStateFailed:
 			failedTests++
 			testCaseResult.Reason = tcResult.FailureReason
 			testCaseResult.Logs = tcResult.CapturedTestOutput
-		case "error": //nolint:goconst
+		case cnfcertificationsv1alpha1.StatusStateError:
 			erroredTests++
 		}
 
+		// Always show failed compliant and non-compliant resources
+		if tcResult.State == cnfcertificationsv1alpha1.StatusStateFailed ||
+			(tcResult.State == cnfcertificationsv1alpha1.StatusStatePassed && runCR.Spec.ShowCompliantResourcesAlways) {
+			setTestCaseTargets(tcName, tcResult.CheckDetails, &testCaseResult)
+		}
 		if runCR.Spec.ShowAllResultsLogs {
 			testCaseResult.Logs = tcResult.CapturedTestOutput
 		}
@@ -135,12 +148,43 @@ func SetRunCRStatus(runCR *cnfcertificationsv1alpha1.CnfCertificationSuiteRun, c
 
 	switch {
 	case erroredTests >= 1: // at least one test encountered an error
-		runCR.Status.Report.Verdict = "error"
+		runCR.Status.Report.Verdict = cnfcertificationsv1alpha1.StatusVerdictError
 	case failedTests >= 1: // at least one failed test
-		runCR.Status.Report.Verdict = "fail"
+		runCR.Status.Report.Verdict = cnfcertificationsv1alpha1.StatusVerdictFail
 	case skippedTests == totalTests: // all tests were skipped
-		runCR.Status.Report.Verdict = "skip"
+		runCR.Status.Report.Verdict = cnfcertificationsv1alpha1.StatusVerdictSkip
 	default: // all tests who ran have passed
-		runCR.Status.Report.Verdict = "pass"
+		runCR.Status.Report.Verdict = cnfcertificationsv1alpha1.StatusVerdictPass
 	}
+}
+
+func setTestCaseTargets(tcName, checkDetailsStr string, testCaseResult *cnfcertificationsv1alpha1.TestCaseResult) {
+	if checkDetailsStr == "" {
+		logrus.Warnf("tcs %s with state %s has an empty checkDetails field", tcName, testCaseResult.Result)
+		return
+	}
+	checkDetails := CheckDetails{}
+	err := json.Unmarshal([]byte(checkDetailsStr), &checkDetails)
+	if err != nil {
+		logrus.Errorf("error unmarsling check details of tc %s: %s", tcName, err)
+		return
+	}
+
+	testCaseResult.TargetResources = &cnfcertificationsv1alpha1.TargetResources{
+		Compliant:    getTargetResourcesFromClaim(checkDetails.Compliant),
+		NonCompliant: getTargetResourcesFromClaim(checkDetails.NonCompliant),
+	}
+}
+
+func getTargetResourcesFromClaim(claimTcTargets []map[string]interface{}) []cnfcertificationsv1alpha1.TargetResource {
+	var tcTargets []cnfcertificationsv1alpha1.TargetResource
+	for i, c := range claimTcTargets {
+		tcTargets = append(tcTargets, map[string]string{})
+		objectFieldsKeys := c["ObjectFieldsKeys"].([]interface{})
+		objectFieldsValues := c["ObjectFieldsValues"].([]interface{})
+		for j, key := range objectFieldsKeys {
+			tcTargets[i][key.(string)] = objectFieldsValues[j].(string)
+		}
+	}
+	return tcTargets
 }

@@ -19,3 +19,4 @@ spec:
   preflightSecretName : "cnf-certsuite-preflight-dockerconfig"
   enableDataCollection: false
   showAllResultsLogs: false
+  showCompliantResourcesAlways: false
