@@ -119,7 +119,7 @@ func (r *CnfCertificationSuiteRunReconciler) updateStatusPhase(namespacedName ty
 	})
 }
 
-func (r *CnfCertificationSuiteRunReconciler) getJobRunTimeThreshold(timeoutStr string) time.Duration {
+func getJobRunTimeThreshold(timeoutStr string) time.Duration {
 	jobRunTimeThreshold, err := time.ParseDuration(timeoutStr)
 	if err != nil {
 		logger.Info("Couldn't extarct job run timeout, setting default timeout.")
@@ -142,7 +142,7 @@ func (r *CnfCertificationSuiteRunReconciler) waitForCertSuitePodToComplete(certS
 			return 0, nil
 		case corev1.PodFailed:
 			logger.Info("Cnf job pod has completed with failure.")
-			return r.getCertSuiteContainerExitStatus(&certSuitePod), nil
+			return getCertSuiteContainerExitStatus(&certSuitePod), nil
 		default:
 			logger.Infof("Cnf job pod is running. Current status: %s", certSuitePod.Status.Phase)
 			time.Sleep(checkInterval)
@@ -152,7 +152,7 @@ func (r *CnfCertificationSuiteRunReconciler) waitForCertSuitePodToComplete(certS
 	return 0, fmt.Errorf("timeout (%s) reached while waiting for cert suite pod %v to finish", timeOut, certSuitePodNamespacedName)
 }
 
-func (r *CnfCertificationSuiteRunReconciler) getCertSuiteContainerExitStatus(certSuitePod *corev1.Pod) int32 {
+func getCertSuiteContainerExitStatus(certSuitePod *corev1.Pod) int32 {
 	for i := range certSuitePod.Status.ContainerStatuses {
 		containerStatus := &certSuitePod.Status.ContainerStatuses[i]
 		if containerStatus.Name == definitions.CnfCertSuiteContainerName {
@@ -168,7 +168,7 @@ func (r *CnfCertificationSuiteRunReconciler) handleEndOfCnfCertSuiteRun(runCrNam
 	certSuitePodNamespacedName := types.NamespacedName{Name: certSuitePodName, Namespace: namespace}
 	runCrNamespacedName := types.NamespacedName{Name: runCrName, Namespace: namespace}
 
-	certSuiteTimeout := r.getJobRunTimeThreshold(reqTimeout)
+	certSuiteTimeout := getJobRunTimeThreshold(reqTimeout)
 	certSuiteExitStatusCode, err := r.waitForCertSuitePodToComplete(certSuitePodNamespacedName, certSuiteTimeout)
 	if err != nil {
 		logger.Errorf("failed to handle end of cert suite run: %v", err)
