@@ -142,7 +142,11 @@ func (r *CnfCertificationSuiteRunReconciler) waitForCertSuitePodToComplete(certS
 			return 0, nil
 		case corev1.PodFailed:
 			logger.Info("Cnf job pod has completed with failure.")
-			return getCertSuiteContainerExitStatus(&certSuitePod), nil
+			exitStatus, err := getCertSuiteContainerExitStatus(&certSuitePod)
+			if err != nil {
+				return 0, err
+			}
+			return exitStatus, nil
 		default:
 			logger.Infof("Cnf job pod is running. Current status: %s", certSuitePod.Status.Phase)
 			time.Sleep(checkInterval)
@@ -152,16 +156,15 @@ func (r *CnfCertificationSuiteRunReconciler) waitForCertSuitePodToComplete(certS
 	return 0, fmt.Errorf("timeout (%s) reached while waiting for cert suite pod %v to finish", timeOut, certSuitePodNamespacedName)
 }
 
-func getCertSuiteContainerExitStatus(certSuitePod *corev1.Pod) int32 {
+func getCertSuiteContainerExitStatus(certSuitePod *corev1.Pod) (int32, error) {
 	for i := range certSuitePod.Status.ContainerStatuses {
 		containerStatus := &certSuitePod.Status.ContainerStatuses[i]
 		if containerStatus.Name == definitions.CnfCertSuiteContainerName {
-			return containerStatus.State.Terminated.ExitCode
+			return containerStatus.State.Terminated.ExitCode, nil
 		}
 	}
 
-	logger.Errorf("Failed to get cert suite exit status: container not found in pod %s (ns %s)", certSuitePod.Name, certSuitePod.Namespace)
-	return -1
+	return 0, fmt.Errorf("failed to get cert suite exit status: container not found in pod %s (ns %s)", certSuitePod.Name, certSuitePod.Namespace)
 }
 
 func (r *CnfCertificationSuiteRunReconciler) handleEndOfCnfCertSuiteRun(runCrName, certSuitePodName, namespace, reqTimeout string) {
