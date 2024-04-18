@@ -25,12 +25,13 @@ metadata:
             "logLevel": "info",
             "preflightSecretName": "cnf-certsuite-preflight-dockerconfig",
             "showAllResultsLogs": false,
+            "showCompliantResourcesAlways": false,
             "timeout": "2h"
           }
         }
       ]
     capabilities: Basic Install
-    createdAt: "2024-03-15T18:05:49Z"
+    createdAt: "2024-04-02T08:25:48Z"
     operators.operatorframework.io/builder: operator-sdk-v1.34.1
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
   name: cnf-certsuite-operator.v0.0.1
