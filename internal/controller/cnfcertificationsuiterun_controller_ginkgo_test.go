@@ -19,45 +19,37 @@ package controller
 import (
 	"context"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	cnfcertificationsv1alpha1 "github.com/test-network-function/cnf-certsuite-operator/api/v1alpha1"
-	v1 "k8s.io/api/core/v1"
+	. "github.com/onsi/ginkgo/v2" //nolint:revive
+	. "github.com/onsi/gomega"    //nolint:revive
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-)
 
-var runCR *cnfcertificationsv1alpha1.CnfCertificationSuiteRun
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	cnfcertificationsv1alpha1 "github.com/test-network-function/cnf-certsuite-operator/api/v1alpha1"
+)
 
 var _ = Describe("CnfCertificationSuiteRun Controller", func() {
 	Context("When reconciling a resource", func() {
-		const resourceName = "cnfcertificationsuiterun-sample"
+		const resourceName = "test-resource"
 
 		ctx := context.Background()
 
-		namespace := &v1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "cnf-certsuite-operator",
-			},
-		}
-		Expect(k8sClient.Create(ctx, namespace)).To(Succeed())
-
 		typeNamespacedName := types.NamespacedName{
 			Name:      resourceName,
-			Namespace: "cnf-certsuite-operator",
+			Namespace: "default", // TODO(user):Modify as needed
 		}
-		runCR = &cnfcertificationsv1alpha1.CnfCertificationSuiteRun{}
+		cnfcertificationsuiterun := &cnfcertificationsv1alpha1.CnfCertificationSuiteRun{}
 
 		BeforeEach(func() {
 			By("creating the custom resource for the Kind CnfCertificationSuiteRun")
-			err := k8sClient.Get(ctx, typeNamespacedName, runCR)
+			err := k8sClient.Get(ctx, typeNamespacedName, cnfcertificationsuiterun)
 			if err != nil && errors.IsNotFound(err) {
 				resource := &cnfcertificationsv1alpha1.CnfCertificationSuiteRun{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resourceName,
-						Namespace: "cnf-certsuite-operator",
+						Namespace: "default",
 					},
 					// TODO(user): Specify other spec details if needed.
 				}
@@ -74,7 +66,6 @@ var _ = Describe("CnfCertificationSuiteRun Controller", func() {
 			By("Cleanup the specific resource instance CnfCertificationSuiteRun")
 			Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
 		})
-
 		It("should successfully reconcile the resource", func() {
 			By("Reconciling the created resource")
 			controllerReconciler := &CnfCertificationSuiteRunReconciler{
@@ -86,6 +77,8 @@ var _ = Describe("CnfCertificationSuiteRun Controller", func() {
 				NamespacedName: typeNamespacedName,
 			})
 			Expect(err).NotTo(HaveOccurred())
+			// TODO(user): Add more specific assertions depending on your controller's reconciliation logic.
+			// Example: If you expect a certain status condition after reconciliation, verify it here.
 		})
 	})
 })
