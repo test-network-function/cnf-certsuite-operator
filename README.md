@@ -50,19 +50,62 @@ kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
 
 #### Initial steps
 
-1. Clone Cnf Certification Operator repo:
+Clone Cnf Certification Operator repo:
+
+```sh
+git clone https://github.com/greyerof/tnf-op.git
+```
+
+#### Option 1: Using OLM subscription
+
+1. Export OLM catalog image and namespace:
 
     ```sh
-    git clone https://github.com/greyerof/tnf-op.git
+    export OLM_INSTALL_IMG_CATALOG=<your-registry.com>/<your-repo>/cnf-certsuite-operator-catalog:<version>
+    export OLM_INSTALL_NAMESPACE=<your-namespace>
     ```
 
-2. Install cert-manager:
+    **Note:** If the catalog image and namespace aren't provided,
+    they will be set by default to:
 
     ```sh
-    kubectl apply -f https://github.com/jetstack/cert-manager/releases/latest/download/cert-manager.yaml
+    OLM_INSTALL_IMG_CATALOG = quay.io/testnetworkfunction/cnf-certsuite-operator-catalog:latest
+    OLM_INSTALL_NAMESPACE = cnf-certsuite-operator
     ```
 
-#### Option 1: Use a your own registry account
+2. Install Cnf Certification Operator:\
+    Use the following make target to install the operator using OLM subscription:
+
+    ```sh
+    make olm-install
+    ```
+
+3. Verify Installation:
+    Run the following command and expect a similar output:
+
+    <!-- markdownlint-disable -->
+    ```sh
+    $ oc get pods -n $OLM_INSTALL_NAMESPACE
+    NAME                                                              READY   STATUS      RESTARTS   AGE
+    afa1738b451274ef681c19ae8e8a6dcc50f65568056ef97355a4a2fe14hbhpn   0/1     Completed   0          3m32s
+    cnf-certsuite-controller-manager-67f68cd4cb-625ww                 2/2     Running     0          3m18s
+    cnf-certsuite-operator-olm-catalog-mkmqw                          1/1     Running     0          3m45s
+    ```
+    <!-- markdownlint-enable -->
+
+    **Note:** If `OLM_INSTALL_NAMESPACE` environment variable wasn't exported
+    in previous steps, use `cnf-certsuite-operator` as namespace instead.
+
+#### Option 2: Manually building and deploying the operator
+
+In order to Install the operator by manually building and deploying it,
+the `cert-manager` has to be installed at first:
+
+```sh
+kubectl apply -f https://github.com/jetstack/cert-manager/releases/latest/download/cert-manager.yaml
+```
+
+##### Option 2.1: Use your own registry account
 
 1. Export images environment variables:
 
@@ -91,7 +134,7 @@ kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
     make deploy
     ```
 
-#### Option 2: Use local images
+##### Option 2.2: Use local images
 
 1. Export images environment variables (optional):
 
@@ -273,7 +316,17 @@ make uninstall
 
 ### Undeploy controller
 
-UnDeploy the controller from the cluster:
+#### Option 1: Operator was installed using OLM subscription
+
+Uninstall operator:
+
+```sh
+make olm-uninstall
+```
+
+#### Option 2: Operator was Manually built and deployed
+
+Undeploy the controller from the cluster:
 
 ```sh
 make undeploy
