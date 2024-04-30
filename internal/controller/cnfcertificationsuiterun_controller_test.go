@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -57,7 +58,7 @@ func Test_getCertSuiteContainerExitStatus(t *testing.T) {
 		wantExitStatus int32
 		wantError      error
 	}{
-		{ // Test case #1 - Pass with exit status 0
+		{ // Test case #1 - Pass with returned exit status 0
 			name: "Container cnf-certsuite has 0 exit code",
 			certSuitePod: &corev1.Pod{
 				Status: corev1.PodStatus{
@@ -76,7 +77,26 @@ func Test_getCertSuiteContainerExitStatus(t *testing.T) {
 			wantExitStatus: 0,
 			wantError:      nil,
 		},
-		{ // Test case #2 - Pass with exit status -1
+		{ // Test case #2 - Pass with returned exit status -1
+			name: "Container cnf-certsuite has 0 exit code",
+			certSuitePod: &corev1.Pod{
+				Status: corev1.PodStatus{
+					ContainerStatuses: []corev1.ContainerStatus{
+						{
+							Name: "cnf-certsuite",
+							State: corev1.ContainerState{
+								Terminated: &corev1.ContainerStateTerminated{
+									ExitCode: -1,
+								},
+							},
+						},
+					},
+				},
+			},
+			wantExitStatus: -1,
+			wantError:      nil,
+		},
+		{ // Test case #3 - Fail with "container not found" error
 			name: "Container cnf-certsuite wasn't find in pod",
 			certSuitePod: &corev1.Pod{
 				ObjectMeta: v1.ObjectMeta{
@@ -151,6 +171,7 @@ func TestCnfCertificationSuiteRunReconciler_updateStatus(t *testing.T) {
 	tests := []struct {
 		name                string
 		statusSetterFn      func(currStatus *cnfcertificationsv1alpha1.CnfCertificationSuiteRunStatus)
+		statusCheckerFn     func(currStatus *cnfcertificationsv1alpha1.CnfCertificationSuiteRunStatus) error
 		runCRNamespacedName types.NamespacedName
 		wantErr             bool
 	}{
@@ -158,6 +179,13 @@ func TestCnfCertificationSuiteRunReconciler_updateStatus(t *testing.T) {
 			name: "Pass when updating phase",
 			statusSetterFn: func(currStatus *cnfcertificationsv1alpha1.CnfCertificationSuiteRunStatus) {
 				currStatus.Phase = definitions.CnfCertificationSuiteRunStatusPhaseJobFinished
+			},
+			statusCheckerFn: func(currStatus *cnfcertificationsv1alpha1.CnfCertificationSuiteRunStatus) error {
+				if currStatus.Phase != definitions.CnfCertificationSuiteRunStatusPhaseJobFinished {
+					return fmt.Errorf("CnfCertificationSuiteRun status updated has failed. current status: %v, wanted status: %v",
+						currStatus.Phase, definitions.CnfCertificationSuiteRunStatusPhaseJobFinished)
+				}
+				return nil
 			},
 			runCRNamespacedName: types.NamespacedName{
 				Name:      "cnf-run-sample",
@@ -169,6 +197,13 @@ func TestCnfCertificationSuiteRunReconciler_updateStatus(t *testing.T) {
 			name: "Fail updating phase",
 			statusSetterFn: func(currStatus *cnfcertificationsv1alpha1.CnfCertificationSuiteRunStatus) {
 				currStatus.Phase = definitions.CnfCertificationSuiteRunStatusPhaseJobFinished
+			},
+			statusCheckerFn: func(currStatus *cnfcertificationsv1alpha1.CnfCertificationSuiteRunStatus) error {
+				if currStatus.Phase != definitions.CnfCertificationSuiteRunStatusPhaseJobFinished {
+					return fmt.Errorf("CnfCertificationSuiteRun status updated has failed. current status: %v, wanted status: %v",
+						currStatus.Phase, definitions.CnfCertificationSuiteRunStatusPhaseJobFinished)
+				}
+				return nil
 			},
 			runCRNamespacedName: types.NamespacedName{},
 			wantErr:             true,
@@ -187,8 +222,23 @@ func TestCnfCertificationSuiteRunReconciler_updateStatus(t *testing.T) {
 	for _, tc := range tests {
 		r := mockReconciler([]runtime.Object{runCR})
 
-		if err := r.updateStatus(tc.runCRNamespacedName, tc.statusSetterFn); (err != nil) != tc.wantErr {
+		// check whether an error has occurred if expected, and hasn't occurred if not expected
+		err := r.updateStatus(tc.runCRNamespacedName, tc.statusSetterFn)
+		if (err != nil) != tc.wantErr {
 			t.Errorf("CnfCertificationSuiteRunReconciler.updateStatus() error = %v, wantErr %v", err, tc.wantErr)
+		}
+
+		// check if status was updated (if an error hasn't occurred)
+		if err == nil {
+			updatedRunCR := cnfcertificationsv1alpha1.CnfCertificationSuiteRun{}
+			err := r.Get(context.TODO(), tc.runCRNamespacedName, &updatedRunCR)
+			if err != nil {
+				t.Errorf("Error getting updated Run CR ")
+			}
+			err = tc.statusCheckerFn(&updatedRunCR.Status)
+			if err != nil {
+				t.Errorf(err.Error())
+			}
 		}
 	}
 }
