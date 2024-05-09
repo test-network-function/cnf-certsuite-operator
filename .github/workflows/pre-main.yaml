@@ -128,7 +128,7 @@ jobs:
           path: cnf-certification-test-partner
 
       - name: Bootstrap cluster, docker, and python
-        uses: nick-fields/retry@v2
+        uses: nick-fields/retry@v3
         with:
           timeout_minutes: 5
           max_attempts: 3
@@ -149,7 +149,7 @@ jobs:
           sudo ls -la /mnt/docker-storage
 
       - name: Run 'make rebuild-cluster'
-        uses: nick-fields/retry@v2
+        uses: nick-fields/retry@v3
         env:
           SKIP_PRELOAD_IMAGES: true
         with:
@@ -158,7 +158,7 @@ jobs:
           command: cd ${GITHUB_WORKSPACE}/cnf-certification-test-partner; make rebuild-cluster
 
       - name: Run 'make install'
-        uses: nick-fields/retry@v2
+        uses: nick-fields/retry@v3
         env:
           SKIP_PRELOAD_IMAGES: true
         with:
