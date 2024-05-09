@@ -1,6 +1,6 @@
 module github.com/test-network-function/cnf-certsuite-operator
 
-go 1.20
+go 1.22.3
 
 require (
 	github.com/go-logr/logr v1.2.4
