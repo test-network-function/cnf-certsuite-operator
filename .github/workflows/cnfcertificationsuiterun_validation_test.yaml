@@ -18,6 +18,12 @@ jobs:
       - name: Disable default go problem matcher
         run: echo "::remove-matcher owner=go::"
 
+      - name: Check if /etc/docker/daemon.json exists and if not, create it.
+        run: |
+          if [ ! -f /etc/docker/daemon.json ]; then
+            echo '{}' | sudo tee /etc/docker/daemon.json
+          fi
+
         # Restart docker using /mnt/docker-storage (sdb) instead of /var/lib/docker (sda).
       - name: Make docker to use /mnt (sdb) for storage
         run: |
@@ -58,7 +64,7 @@ jobs:
         with:
           timeout_minutes: 5
           max_attempts: 3
-          command: cd ${GITHUB_WORKSPACE}/cnf-certification-test-partner; make bootstrap-cluster && make bootstrap-docker-ubuntu-local && make bootstrap-python-ubuntu-local
+          command: cd ${GITHUB_WORKSPACE}/cnf-certification-test-partner; make bootstrap-cluster && make bootstrap-docker-ubuntu-local
 
     # Restart docker using /mnt/docker-storage (sdb) instead of /var/lib/docker (sda).
     # This step needs to be done right after the partner repo's bootstrap scripts, as they
@@ -90,7 +96,7 @@ jobs:
         with:
           timeout_minutes: 20
           max_attempts: 3
-          command: cd ${GITHUB_WORKSPACE}/cnf-certification-test-partner; make install
+          command: cd ${GITHUB_WORKSPACE}/cnf-certification-test-partner; python3 -m venv .venv; source .venv/bin/activate; pip install --upgrade pip; pip install jinjanator; cp .venv/bin/jinjanate .venv/bin/j2; make install
 
       - name: Install cert-manager to cluster
         run: |
