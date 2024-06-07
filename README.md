@@ -53,7 +53,7 @@ kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
 Clone Cnf Certification Operator repo:
 
 ```sh
-git clone https://github.com/greyerof/tnf-op.git
+git clone https://github.com/test-network-function/cnf-certsuite-operator.git
 ```
 
 #### Option 1: Using OLM subscription
@@ -173,7 +173,7 @@ make deploy-samples
 
 **Note**: Current sample CnfCertificationSuiteRun CR configures
 the CNF Certification Suite to run the "observability" test suite only.
-It can be modified by changing manually the `labelsFilter` of the [sample CR](https://github.com/greyerof/tnf-op/blob/main/config/samples/cnf-certifications_v1alpha1_cnfcertificationsuiterun.yaml).
+It can be modified by changing manually the `labelsFilter` of the [sample CR](https://github.com/test-network-function/cnf-certsuite-operator/blob/main/config/samples/cnf-certifications_v1alpha1_cnfcertificationsuiterun.yaml).
 
 ### How to customize the CNF Certification Suite run
 
@@ -214,7 +214,7 @@ It can be modified by changing manually the `labelsFilter` of the [sample CR](ht
         resources of all results. and not only compliant and non-compliant
         resources of failed test cases. This field is set to "false" by default.
 
-        See a [sample CnfCertificationSuiteRun CR](https://github.com/greyerof/tnf-op/blob/main/config/samples/cnf-certifications_v1alpha1_cnfcertificationsuiterun.yaml)
+        See a [sample CnfCertificationSuiteRun CR](https://github.com/test-network-function/cnf-certsuite-operator/blob/main/config/samples/cnf-certifications_v1alpha1_cnfcertificationsuiterun.yaml)
 
 2. Apply resources into the cluster
 
