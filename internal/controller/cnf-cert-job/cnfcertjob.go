@@ -74,21 +74,11 @@ func newInitialJobPod() *corev1.Pod {
 				{
 					Name:    definitions.CnfCertSuiteContainerName,
 					Image:   "quay.io/testnetworkfunction/cnf-certification-test:unstable",
-					Command: []string{"./run-cnf-suites.sh"},
-					Args:    []string{"-o", definitions.CnfCertSuiteResultsFolder},
-					Env: []corev1.EnvVar{
-						{
-							Name:  "PFLT_DOCKERCONFIG",
-							Value: definitions.PreflightDockerConfigFilePath,
-						},
-						{
-							Name:  "TNF_CONFIGURATION_PATH",
-							Value: definitions.CnfCertSuiteConfigFilePath,
-						},
-						{
-							Name:  "TNF_NON_INTRUSIVE_ONLY",
-							Value: "true",
-						},
+					Command: []string{"certsuite"},
+					Args: []string{"run", "-o", definitions.CnfCertSuiteResultsFolder,
+						"-c", definitions.CnfCertSuiteConfigFilePath,
+						"--preflight-dockerconfig", definitions.PreflightDockerConfigFilePath,
+						"--non-intrusive", "true",
 					},
 					ImagePullPolicy: "Always",
 					VolumeMounts: []corev1.VolumeMount{
