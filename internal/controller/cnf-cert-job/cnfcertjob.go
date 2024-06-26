@@ -146,24 +146,22 @@ func WithLabelsFilter(labelsFilter string) func(*corev1.Pod) error {
 
 func WithLogLevel(loglevel string) func(*corev1.Pod) error {
 	return func(p *corev1.Pod) error {
-		envVar := corev1.EnvVar{Name: "TNF_LOG_LEVEL", Value: loglevel}
 		cnfCertSuiteContainer := getCnfCertSuiteContainer(p)
 		if cnfCertSuiteContainer == nil {
 			return fmt.Errorf("cnf cert suite Container is not found in pod %s", p.Name)
 		}
-		cnfCertSuiteContainer.Env = append(cnfCertSuiteContainer.Env, envVar)
+		cnfCertSuiteContainer.Args = append(cnfCertSuiteContainer.Args, "--log-level", loglevel)
 		return nil
 	}
 }
 
 func WithTimeOut(timeout string) func(*corev1.Pod) error {
 	return func(p *corev1.Pod) error {
-		envVar := corev1.EnvVar{Name: "TIMEOUT", Value: timeout}
 		cnfCertSuiteContainer := getCnfCertSuiteContainer(p)
 		if cnfCertSuiteContainer == nil {
 			return fmt.Errorf("cnf cert suite Container is not found in pod %s", p.Name)
 		}
-		cnfCertSuiteContainer.Env = append(cnfCertSuiteContainer.Env, envVar)
+		cnfCertSuiteContainer.Args = append(cnfCertSuiteContainer.Args, "--timeout", timeout)
 		return nil
 	}
 }
@@ -225,12 +223,11 @@ func WithSideCarApp(sideCarAppImage string) func(*corev1.Pod) error {
 
 func WithEnableDataCollection(enableDataCollection string) func(*corev1.Pod) error {
 	return func(p *corev1.Pod) error {
-		envVar := corev1.EnvVar{Name: "TNF_ENABLE_DATA_COLLECTION", Value: enableDataCollection}
 		cnfCertSuiteContainer := getCnfCertSuiteContainer(p)
 		if cnfCertSuiteContainer == nil {
 			return fmt.Errorf("cnf cert suite Container is not found in pod %s", p.Name)
 		}
-		cnfCertSuiteContainer.Env = append(cnfCertSuiteContainer.Env, envVar)
+		cnfCertSuiteContainer.Args = append(cnfCertSuiteContainer.Args, "--enable-data-collection", enableDataCollection)
 		return nil
 	}
 }
