@@ -71,7 +71,7 @@ const (
 
 func ignoreUpdatePredicate() predicate.Predicate {
 	return predicate.Funcs{
-		UpdateFunc: func(e event.UpdateEvent) bool {
+		UpdateFunc: func(_ event.UpdateEvent) bool {
 			// Ignore updates to CR
 			return false
 		},
