@@ -31,7 +31,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2024-04-02T08:25:48Z"
+    createdAt: "2024-07-01T07:39:14Z"
     operators.operatorframework.io/builder: operator-sdk-v1.34.2
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
   name: cnf-certsuite-operator.v0.0.1
