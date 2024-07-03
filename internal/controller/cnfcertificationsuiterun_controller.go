@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -28,6 +29,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -291,6 +293,61 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 	return ctrl.Result{}, nil
 }
 
+func (r *CnfCertificationSuiteRunReconciler) createSinglePluginResource(filePath string, decoder runtime.Decoder) error {
+	logger.Infof("Creating plugin resource: %s", filePath)
+	yamlFile, err := os.ReadFile(filePath)
+	if err != nil {
+		logger.Errorf("failed to read plugin resource file: %s, err: %v", filePath, err)
+		return err
+	}
+
+	obj, _, err := decoder.Decode(yamlFile, nil, nil)
+	if err != nil {
+		logger.Errorf("failed to decode plugin resources yaml file, err: %v", err)
+		return err
+	}
+
+	// Apply the resource to the cluster
+	err = r.Create(context.TODO(), obj.(client.Object))
+	if err != nil {
+		logger.Errorf("failed to create plugin resource, err: %v", err)
+		return err
+	}
+	logger.Infof("Plugin resource %s has been created", filePath)
+	return nil
+}
+
+func (r *CnfCertificationSuiteRunReconciler) CreatePluginResources() error {
+	var pluginDir = "/plugin"
+
+	// Read all  plugin's resources (written in yaml files)
+	yamlFiles, err := os.ReadDir(pluginDir)
+	if err != nil {
+		logger.Errorf("failed to read plugin resources directory, err: %v", err)
+		return err
+	}
+
+	// Create plugin's namespace
+	err = r.Create(context.TODO(), &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "cnf-certsuite-plugin"}})
+	if err != nil {
+		logger.Errorf("failed to create plugin namespace, err: %v", err)
+		return err
+	}
+
+	// Iterate over all plugin's resources
+	decoder := serializer.NewCodecFactory(r.Scheme).UniversalDeserializer()
+	for _, file := range yamlFiles {
+		yamlfilepath := filepath.Join(pluginDir, file.Name())
+		err = r.createSinglePluginResource(yamlfilepath, decoder)
+		if err != nil {
+			return err
+		}
+	}
+
+	logger.Info("Operator's console plugin was installed successfully.")
+	return nil
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *CnfCertificationSuiteRunReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	logger.Info("Setting up CnfCertificationSuiteRunReconciler's manager.")
@@ -299,6 +356,11 @@ func (r *CnfCertificationSuiteRunReconciler) SetupWithManager(mgr ctrl.Manager) 
 	sideCarImage, found = os.LookupEnv(definitions.SideCarImageEnvVar)
 	if !found {
 		return fmt.Errorf("sidecar app img env var %q not found", definitions.SideCarImageEnvVar)
+	}
+
+	err := r.CreatePluginResources()
+	if err != nil {
+		return fmt.Errorf("failed to create plugin, err: %v", err)
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).

@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cnf-certsuite-plugin
+  namespace: cnf-certsuite-plugin
+  labels:
+    app: cnf-certsuite-plugin
+    app.kubernetes.io/component: cnf-certsuite-plugin
+    app.kubernetes.io/instance: cnf-certsuite-plugin
+    app.kubernetes.io/part-of: cnf-certsuite-plugin
+    app.openshift.io/runtime-namespace: cnf-certsuite-plugin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cnf-certsuite-plugin
+  template:
+    metadata:
+      labels:
+        app: cnf-certsuite-plugin
+    spec:
+      containers:
+        - name: cnf-certsuite-plugin
+          image: quay.io/rh_ee_shmoran/cnf-plugin:test3
+          ports:
+            - containerPort: 9001
+              protocol: TCP
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: console-serving-cert
+              readOnly: true
+              mountPath: /var/cert
+            - name: nginx-conf
+              readOnly: true
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+      volumes:
+        - name: console-serving-cert
+          secret:
+            secretName: console-serving-cert
+            defaultMode: 420
+        - name: nginx-conf
+          configMap:
+            name: nginx-configmap
+            namespace: cnf-certsuite-plugin
+            defaultMode: 420
+      restartPolicy: Always
+      dnsPolicy: ClusterFirst
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%

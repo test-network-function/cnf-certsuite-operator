@@ -1,0 +1,30 @@
+apiVersion: console.openshift.io/v1
+kind: ConsolePlugin
+metadata:
+  name: cnf-certsuite-plugin
+  namespace: cnf-certsuite-plugin
+  labels:
+    app: cnf-certsuite-plugin
+    app.kubernetes.io/component: cnf-certsuite-plugin
+    app.kubernetes.io/instance: cnf-certsuite-plugin
+    app.kubernetes.io/part-of: cnf-certsuite-plugin
+spec:
+  backend:
+    service:
+      basePath: /
+      name: cnf-certsuite-plugin
+      namespace: cnf-certsuite-plugin
+      port: 9001
+    type: Service
+  displayName: OpenShift Console Demo Plugin
+  i18n:
+    loadType: Preload
+  proxy:
+    - alias: thanos-querier
+      authorization: UserToken
+      endpoint:
+        service:
+          name: thanos-querier
+          namespace: openshift-monitoring
+          port: 9091
+        type: Service

@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-configmap
+  namespace: cnf-certsuite-plugin
+  labels:
+    app: cnf-certsuite-plugin
+    app.kubernetes.io/component: cnf-certsuite-plugin
+    app.kubernetes.io/instance: cnf-certsuite-plugin
+    app.kubernetes.io/part-of: cnf-certsuite-plugin
+data:
+  nginx.conf: |
+    error_log /dev/stdout info;
+    events {}
+    http {
+      access_log         /dev/stdout;
+      include            /etc/nginx/mime.types;
+      default_type       application/octet-stream;
+      keepalive_timeout  65;
+      server {
+        listen              9001 ssl;
+        listen              [::]:9001 ssl;
+        ssl_certificate     /var/cert/tls.crt;
+        ssl_certificate_key /var/cert/tls.key;
+        root                /usr/share/nginx/html;
+      }
+    }
