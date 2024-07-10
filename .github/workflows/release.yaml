@@ -1,8 +1,20 @@
 name: Build and publish release containers to quay.io
+#
+# This workflow creates the container images for OLM-based operator installation.
+# It's triggered on every new release, and on PR's activity. It can also be triggered manually.
+#
+# The concurrency safeguard has been added to avoid concurrent PRs' workflows to push images
+# at the same time, which would possibly result on some images from one PR and others
+# from another to be pushed under the same version.
+#
+concurrency:
+  group: ${{ github.workflow }}
 
 on:
   release:
     types: [published]
+  pull_request:
+    branches: [ main ]
 
   # Manual dispatch: requires version string from github's GUI.
   workflow_dispatch:
@@ -33,6 +45,9 @@ jobs:
             if [ ${GITHUB_EVENT_NAME} == "workflow_dispatch" ]; then
               VERSION=${{ inputs.version }}
               echo "Manually triggered workflow to make release ${VERSION}"
+            elif [ ${GITHUB_EVENT_NAME} == "pull_request" ]; then
+              VERSION=0.0.1-pullrequestcheck
+              echo "Workflow triggered by a pull request to make fake release ${VERSION}"
             else
               VERSION=${{ github.ref_name }}
               echo "New release published: ${VERSION}"
