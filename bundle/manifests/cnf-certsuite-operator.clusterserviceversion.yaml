@@ -2,6 +2,7 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
+    console.openshift.io/plugins: '["cnf-certsuite-plugin"]'
     alm-examples: |-
       [
         {
@@ -145,7 +146,7 @@ spec:
                       fieldPath: metadata.annotations['olm.targetNamespaces']
                 - name: SIDECAR_APP_IMG
                   value: quay.io/testnetworkfunction/cnf-certsuite-operator-sidecar:v0.0.1
-                image: quay.io/rh_ee_shmoran/cnf-certsuite-operator:plugin-test28
+                image: quay.io/rh_ee_shmoran/cnf-certsuite-operator:rbac-test2
                 imagePullPolicy: IfNotPresent
                 livenessProbe:
                   httpGet:
