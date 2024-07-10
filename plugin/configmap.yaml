@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: nginx-configmap
-  namespace: cnf-certsuite-plugin
+  namespace: cnf-certsuite-operator
   labels:
     app: cnf-certsuite-plugin
     app.kubernetes.io/component: cnf-certsuite-plugin

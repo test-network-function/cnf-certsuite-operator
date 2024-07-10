@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cnf-certsuite-plugin
-  namespace: cnf-certsuite-plugin
+  namespace: cnf-certsuite-operator
   labels:
     app: cnf-certsuite-plugin
     app.kubernetes.io/component: cnf-certsuite-plugin
@@ -42,7 +42,7 @@ spec:
         - name: nginx-conf
           configMap:
             name: nginx-configmap
-            namespace: cnf-certsuite-plugin
+            namespace: cnf-certsuite-operator
             defaultMode: 420
       restartPolicy: Always
       dnsPolicy: ClusterFirst

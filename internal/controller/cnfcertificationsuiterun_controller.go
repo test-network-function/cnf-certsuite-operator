@@ -70,6 +70,10 @@ const (
 
 // +kubebuilder:rbac:groups="",namespace=cnf-certsuite-operator,resources=pods,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",namespace=cnf-certsuite-operator,resources=secrets;configMaps,verbs=get;list;watch
+// +kubebuilder:rbac:groups="",namespace=cnf-certsuite-operator,resources=namespaces;services;configMaps,verbs=create
+
+// +kubebuilder:rbac:groups="console.openshift.io",resources=consoleplugins,verbs=create
+// +kubebuilder:rbac:groups="apps",namespace=cnf-certsuite-operator,resources=deployments,verbs=create
 
 func ignoreUpdatePredicate() predicate.Predicate {
 	return predicate.Funcs{
@@ -308,7 +312,7 @@ func (r *CnfCertificationSuiteRunReconciler) createSinglePluginResource(filePath
 	}
 
 	// Apply the resource to the cluster
-	err = r.Create(context.TODO(), obj.(client.Object))
+	err = r.Create(context.Background(), obj.(client.Object))
 	if err != nil {
 		logger.Errorf("failed to create plugin resource, err: %v", err)
 		return err
@@ -324,13 +328,6 @@ func (r *CnfCertificationSuiteRunReconciler) CreatePluginResources() error {
 	yamlFiles, err := os.ReadDir(pluginDir)
 	if err != nil {
 		logger.Errorf("failed to read plugin resources directory, err: %v", err)
-		return err
-	}
-
-	// Create plugin's namespace
-	err = r.Create(context.TODO(), &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "cnf-certsuite-plugin"}})
-	if err != nil {
-		logger.Errorf("failed to create plugin namespace, err: %v", err)
 		return err
 	}
 
