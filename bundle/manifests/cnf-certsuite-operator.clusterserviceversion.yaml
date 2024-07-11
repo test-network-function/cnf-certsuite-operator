@@ -2,7 +2,6 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    console.openshift.io/plugins: '["cnf-certsuite-plugin"]'
     alm-examples: |-
       [
         {
@@ -22,7 +21,7 @@ metadata:
           "spec": {
             "configMapName": "cnf-certsuite-config",
             "enableDataCollection": false,
-            "labelsFilter": "observability",
+            "labelsFilter": "access-control",
             "logLevel": "info",
             "preflightSecretName": "cnf-certsuite-preflight-dockerconfig",
             "showAllResultsLogs": false,
@@ -32,6 +31,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
+    console.openshift.io/plugins: '["cnf-certsuite-plugin"]'
     createdAt: "2024-07-01T07:39:14Z"
     operators.operatorframework.io/builder: operator-sdk-v1.34.2
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
@@ -70,42 +70,21 @@ spec:
         serviceAccountName: cnf-certsuite-cluster-access
       - rules:
         - apiGroups:
-          - authentication.k8s.io
-          resources:
-          - tokenreviews
-          - subjectaccessreviews
-          verbs:
-          - create
-        - apiGroups:
-          - ""
-          resources:
-          - namespaces
-          - services
-          - configmaps
-          verbs:
-          - create
-          - get
-        - apiGroups:
-          - '*'
-          resources:
-          - consoles
-          - pods
-          - pods/log
-          verbs:
-          - get
-          - list
-          - patch
-          - update
-        - apiGroups:
           - console.openshift.io
           resources:
           - consoleplugins
           verbs:
           - create
         - apiGroups:
-          - apps
+          - authentication.k8s.io
           resources:
-          - deployments
+          - tokenreviews
+          verbs:
+          - create
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
           verbs:
           - create
         serviceAccountName: cnf-certsuite-controller-manager
@@ -250,6 +229,14 @@ spec:
           - ""
           resources:
           - configMaps
+          - namespaces
+          - services
+          verbs:
+          - create
+        - apiGroups:
+          - ""
+          resources:
+          - configMaps
           - secrets
           verbs:
           - get
@@ -267,6 +254,12 @@ spec:
           - patch
           - update
           - watch
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          verbs:
+          - create
         - apiGroups:
           - cnf-certifications.redhat.com
           resources:
