@@ -17,5 +17,5 @@ spec:
   - cnf-certsuite-plugin.cnf-certsuite-operator.svc.cluster.local
   issuerRef:
     kind: Issuer
-    name: selfsigned-issuer
+    name: cnf-certsuite-selfsigned-issuer
   secretName: console-serving-cert
