@@ -125,7 +125,7 @@ spec:
                       fieldPath: metadata.annotations['olm.targetNamespaces']
                 - name: SIDECAR_APP_IMG
                   value: quay.io/testnetworkfunction/cnf-certsuite-operator-sidecar:v0.0.1
-                image: quay.io/rh_ee_shmoran/cnf-certsuite-operator:rbac-test2
+                image: quay.io/testnetworkfunction/cnf-certsuite-operator:v0.0.1
                 imagePullPolicy: IfNotPresent
                 livenessProbe:
                   httpGet:
