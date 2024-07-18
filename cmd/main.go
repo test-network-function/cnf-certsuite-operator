@@ -35,6 +35,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	consolev1 "github.com/openshift/api/console/v1"
 	cnfcertificationsv1alpha1 "github.com/test-network-function/cnf-certsuite-operator/api/v1alpha1"
 	"github.com/test-network-function/cnf-certsuite-operator/internal/controller"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -50,6 +51,8 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(cnfcertificationsv1alpha1.AddToScheme(scheme))
+
+	utilruntime.Must(consolev1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 

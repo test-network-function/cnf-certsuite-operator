@@ -21,7 +21,7 @@ metadata:
           "spec": {
             "configMapName": "cnf-certsuite-config",
             "enableDataCollection": false,
-            "labelsFilter": "observability",
+            "labelsFilter": "access-control",
             "logLevel": "info",
             "preflightSecretName": "cnf-certsuite-preflight-dockerconfig",
             "showAllResultsLogs": false,
@@ -31,6 +31,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
+    console.openshift.io/plugins: '["cnf-certsuite-plugin"]'
     createdAt: "2024-07-01T07:39:14Z"
     operators.operatorframework.io/builder: operator-sdk-v1.34.2
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
@@ -68,6 +69,12 @@ spec:
           - '*'
         serviceAccountName: cnf-certsuite-cluster-access
       - rules:
+        - apiGroups:
+          - console.openshift.io
+          resources:
+          - consoleplugins
+          verbs:
+          - create
         - apiGroups:
           - authentication.k8s.io
           resources:
@@ -222,6 +229,14 @@ spec:
           - ""
           resources:
           - configMaps
+          - namespaces
+          - services
+          verbs:
+          - create
+        - apiGroups:
+          - ""
+          resources:
+          - configMaps
           - secrets
           verbs:
           - get
@@ -239,6 +254,12 @@ spec:
           - patch
           - update
           - watch
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          verbs:
+          - create
         - apiGroups:
           - cnf-certifications.redhat.com
           resources:

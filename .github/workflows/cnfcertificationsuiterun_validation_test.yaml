@@ -97,6 +97,10 @@ jobs:
           kubectl apply -f https://github.com/jetstack/cert-manager/releases/latest/download/cert-manager.yaml
           oc wait --for=condition=ready pod --all=true -n cert-manager --timeout=5m
 
+      - name: Install consoleplugin CRD to cluster
+        run: |
+          kubectl apply -f https://raw.githubusercontent.com/openshift/api/master/console/v1/zz_generated.crd-manifests/90_consoleplugins.crd.yaml
+
       - name: More cleanup
         run: |
           df -h

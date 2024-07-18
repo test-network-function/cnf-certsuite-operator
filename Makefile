@@ -204,6 +204,12 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
       && $(KUSTOMIZE) edit add patch --kind Deployment --patch "[{\"op\": \"replace\", \"path\": \"/spec/template/spec/containers/0/env/1\", \"value\": {\"name\": \"SIDECAR_APP_IMG\", \"value\": \"${SIDECAR_IMG}\"} }]"
 	cd config/crd && $(KUSTOMIZE) edit add patch --path patches/cainjection_in_cnfcertificationsuiteruns.yaml
 	$(KUSTOMIZE) build config/default/manual-deploy | $(KUBECTL) apply -f -
+	@if oc get pod -A | grep service-ca-operator > /dev/null 2>&1; then \
+		echo "Skipping cert-manager's certificates for console-plugin"; \
+	else \
+		echo "Using cert-manager's certificate for console-plugin"; \
+		kubectl apply -f config/k8plugincert/certificate.yaml; \
+	fi
 
 .PHONY: undeploy
 undeploy: kustomize ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
