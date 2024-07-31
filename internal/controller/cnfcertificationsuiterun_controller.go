@@ -297,7 +297,7 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 	return ctrl.Result{}, nil
 }
 
-func (r *CnfCertificationSuiteRunReconciler) createSinglePluginResource(filePath string, decoder runtime.Decoder) error {
+func (r *CnfCertificationSuiteRunReconciler) createSinglePluginResource(filePath, ns string, decoder runtime.Decoder) error {
 	logger.Infof("Creating plugin resource: %s", filePath)
 	yamlFile, err := os.ReadFile(filePath)
 	if err != nil {
@@ -311,8 +311,11 @@ func (r *CnfCertificationSuiteRunReconciler) createSinglePluginResource(filePath
 		return err
 	}
 
+	clientObj := obj.(client.Object)
+	clientObj.SetNamespace(ns)
+
 	// Apply the resource to the cluster
-	err = r.Create(context.Background(), obj.(client.Object))
+	err = r.Create(context.Background(), clientObj)
 	if err != nil {
 		logger.Errorf("failed to create plugin resource, err: %v", err)
 		return err
@@ -331,11 +334,17 @@ func (r *CnfCertificationSuiteRunReconciler) CreatePluginResources() error {
 		return err
 	}
 
+	// Get controller's ns to set plugin in same ns
+	controllerNS, found := os.LookupEnv(definitions.ControllerNamespaceEnvVar)
+	if !found {
+		return fmt.Errorf("controller ns env var %q not found", definitions.ControllerNamespaceEnvVar)
+	}
+
 	// Iterate over all plugin's resources
 	decoder := serializer.NewCodecFactory(r.Scheme).UniversalDeserializer()
 	for _, file := range yamlFiles {
 		yamlfilepath := filepath.Join(pluginDir, file.Name())
-		err = r.createSinglePluginResource(yamlfilepath, decoder)
+		err = r.createSinglePluginResource(yamlfilepath, controllerNS, decoder)
 		if err != nil {
 			return err
 		}
