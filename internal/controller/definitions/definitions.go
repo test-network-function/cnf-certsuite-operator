@@ -22,6 +22,6 @@ const (
 	PreflightDockerConfigFilePath = CnfPreflightConfigFolder + "/preflight_dockerconfig.json"
 
 	SideCarResultsFolderEnvVar = "TNF_RESULTS_FOLDER"
-
-	SideCarImageEnvVar = "SIDECAR_APP_IMG"
+	SideCarImageEnvVar         = "SIDECAR_APP_IMG"
+	ControllerNamespaceEnvVar  = "CONTROLLER_NS"
 )
