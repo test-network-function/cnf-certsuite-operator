@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 
 	"github.com/sirupsen/logrus"
-	cnfcertificationsv1alpha1 "github.com/test-network-function/cnf-certsuite-operator/api/v1alpha1"
-	"github.com/test-network-function/cnf-certsuite-operator/cnf-cert-sidecar/app/claim"
+	cnfcertificationsv1alpha1 "github.com/redhat-best-practices-for-k8s/certsuite-operator/api/v1alpha1"
+	"github.com/redhat-best-practices-for-k8s/certsuite-operator/cnf-cert-sidecar/app/claim"
 	corev1 "k8s.io/api/core/v1"
 )
 
