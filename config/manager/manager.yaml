@@ -76,7 +76,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: SIDECAR_APP_IMG
-          value: quay.io/testnetworkfunction/cnf-certsuite-operator-sidecar:v0.0.1
+          value: quay.io/redhat-best-practices-for-k8s/certsuite-operator-sidecar:v0.0.1
         - name: CONTROLLER_NS
           valueFrom:
             fieldRef:
