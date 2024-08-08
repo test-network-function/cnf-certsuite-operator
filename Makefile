@@ -339,7 +339,7 @@ deploy-samples: kustomize ## Deploy the sample CR, configmap and secret in the c
 # Install the operator using OLM subscription. It will create the namespace ${OLM_INSTALL_NAMESPACE}, which
 # is defaulted to "cnf-certsuite-operator" if not set, and deploys the CatalogSource, OperatorGroup and
 # and the subscription, using the operator found in the "alpha" channel of the catalog ${OLM_INSTALL_IMG_CATALOG}.
-OLM_INSTALL_IMG_CATALOG ?= quay.io/testnetworkfunction/cnf-certsuite-operator-catalog:latest
+OLM_INSTALL_IMG_CATALOG ?= quay.io/redhat-best-practices-for-k8s/certsuite-operator-catalog:latest
 OLM_INSTALL_NAMESPACE ?= cnf-certsuite-operator
 .PHONY: olm-install
 olm-install: kustomize ## Installs the operator using OLM subscription.

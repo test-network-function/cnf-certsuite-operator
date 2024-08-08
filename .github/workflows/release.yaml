@@ -15,8 +15,8 @@ on:
 
 env:
   REGISTRY: quay.io
-  REGISTRY_USER: testnetworkfunction
-  REPO_BASE_NAME: cnf-certsuite-operator
+  REGISTRY_USER: redhat-best-practices-for-k8s
+  REPO_BASE_NAME: certsuite-operator
 
   TERM: xterm-color
 
