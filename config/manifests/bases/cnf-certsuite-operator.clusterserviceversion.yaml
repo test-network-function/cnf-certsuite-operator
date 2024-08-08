@@ -4,8 +4,8 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Basic Install
-    console.openshift.io/plugins: '["cnf-certsuite-plugin"]'
-  name: cnf-certsuite-operator.v0.0.0
+    console.openshift.io/plugins: '["certsuite-plugin"]'
+  name: certsuite-operator.v0.0.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
