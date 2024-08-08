@@ -24,7 +24,7 @@ import (
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
 	. "github.com/onsi/gomega"    //nolint:revive
 
-	"github.com/test-network-function/cnf-certsuite-operator/test/utils"
+	"github.com/redhat-best-practices-for-k8s/certsuite-operator/test/utils"
 )
 
 const namespace = "cnf-certsuite-operator-system"

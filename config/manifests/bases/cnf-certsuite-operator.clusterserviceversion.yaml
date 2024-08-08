@@ -43,7 +43,7 @@ spec:
   - telco
   links:
   - name: CNF Certification Suite Operator
-    url: https://github.com/test-network-function/cnf-certsuite-operator
+    url: https://github.com/redhat-best-practices-for-k8s/certsuite-operator
   maturity: alpha
   provider:
     name: Red Hat

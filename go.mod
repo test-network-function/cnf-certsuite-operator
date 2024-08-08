@@ -1,4 +1,4 @@
-module github.com/test-network-function/cnf-certsuite-operator
+module github.com/redhat-best-practices-for-k8s/certsuite-operator
 
 go 1.22.5
 

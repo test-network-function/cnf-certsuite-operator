@@ -7,7 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/test-network-function/cnf-certsuite-operator/internal/controller/definitions"
+	"github.com/redhat-best-practices-for-k8s/certsuite-operator/internal/controller/definitions"
 )
 
 const (

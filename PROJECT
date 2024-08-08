@@ -9,7 +9,7 @@ plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
 projectName: cnf-certsuite-operator
-repo: github.com/test-network-function/cnf-certsuite-operator
+repo: github.com/redhat-best-practices-for-k8s/certsuite-operator
 resources:
 - api:
     crdVersion: v1
@@ -18,7 +18,7 @@ resources:
   domain: redhat.com
   group: cnf-certifications
   kind: CnfCertificationSuiteRun
-  path: github.com/test-network-function/cnf-certsuite-operator/api/v1alpha1
+  path: github.com/redhat-best-practices-for-k8s/certsuite-operator/api/v1alpha1
   version: v1alpha1
   webhooks:
     validation: true

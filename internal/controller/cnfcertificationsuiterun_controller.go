@@ -36,10 +36,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	cnfcertificationsv1alpha1 "github.com/test-network-function/cnf-certsuite-operator/api/v1alpha1"
-	cnfcertjob "github.com/test-network-function/cnf-certsuite-operator/internal/controller/cnf-cert-job"
-	"github.com/test-network-function/cnf-certsuite-operator/internal/controller/definitions"
-	controllerlogger "github.com/test-network-function/cnf-certsuite-operator/internal/controller/logger"
+	cnfcertificationsv1alpha1 "github.com/redhat-best-practices-for-k8s/certsuite-operator/api/v1alpha1"
+	cnfcertjob "github.com/redhat-best-practices-for-k8s/certsuite-operator/internal/controller/cnf-cert-job"
+	"github.com/redhat-best-practices-for-k8s/certsuite-operator/internal/controller/definitions"
+	controllerlogger "github.com/redhat-best-practices-for-k8s/certsuite-operator/internal/controller/logger"
 )
 
 var sideCarImage string

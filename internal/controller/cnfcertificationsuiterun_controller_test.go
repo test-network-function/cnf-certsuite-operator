@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
+	cnfcertificationsv1alpha1 "github.com/redhat-best-practices-for-k8s/certsuite-operator/api/v1alpha1"
+	"github.com/redhat-best-practices-for-k8s/certsuite-operator/internal/controller/definitions"
 	"github.com/stretchr/testify/assert"
-	cnfcertificationsv1alpha1 "github.com/test-network-function/cnf-certsuite-operator/api/v1alpha1"
-	"github.com/test-network-function/cnf-certsuite-operator/internal/controller/definitions"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"

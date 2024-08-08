@@ -36,8 +36,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	consolev1 "github.com/openshift/api/console/v1"
-	cnfcertificationsv1alpha1 "github.com/test-network-function/cnf-certsuite-operator/api/v1alpha1"
-	"github.com/test-network-function/cnf-certsuite-operator/internal/controller"
+	cnfcertificationsv1alpha1 "github.com/redhat-best-practices-for-k8s/certsuite-operator/api/v1alpha1"
+	"github.com/redhat-best-practices-for-k8s/certsuite-operator/internal/controller"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	//+kubebuilder:scaffold:imports
 )
