@@ -24,6 +24,7 @@ import (
 	"strconv"
 	"time"
 
+	// appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/retry"
 
@@ -70,10 +71,10 @@ const (
 
 // +kubebuilder:rbac:groups="",namespace=cnf-certsuite-operator,resources=pods,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",namespace=cnf-certsuite-operator,resources=secrets;configMaps,verbs=get;list;watch
-// +kubebuilder:rbac:groups="",namespace=cnf-certsuite-operator,resources=namespaces;services;configMaps,verbs=create
+// +kubebuilder:rbac:groups="",namespace=cnf-certsuite-operator,resources=namespaces;services;configMaps,verbs=create;delete
 
-// +kubebuilder:rbac:groups="console.openshift.io",resources=consoleplugins,verbs=create
-// +kubebuilder:rbac:groups="apps",namespace=cnf-certsuite-operator,resources=deployments,verbs=create
+// +kubebuilder:rbac:groups="console.openshift.io",resources=consoleplugins,verbs=create; delete
+// +kubebuilder:rbac:groups="apps",namespace=cnf-certsuite-operator,resources=deployments,verbs=create;get;list;watch;delete
 
 func ignoreUpdatePredicate() predicate.Predicate {
 	return predicate.Funcs{
@@ -297,60 +298,70 @@ func (r *CnfCertificationSuiteRunReconciler) Reconcile(ctx context.Context, req 
 	return ctrl.Result{}, nil
 }
 
-func (r *CnfCertificationSuiteRunReconciler) createSinglePluginResource(filePath, ns string, decoder runtime.Decoder) error {
-	logger.Infof("Creating plugin resource: %s", filePath)
+func (r *CnfCertificationSuiteRunReconciler) generateSinglePluginResourceObj(filePath, ns string, decoder runtime.Decoder) (client.Object, error) {
 	yamlFile, err := os.ReadFile(filePath)
 	if err != nil {
 		logger.Errorf("failed to read plugin resource file: %s, err: %v", filePath, err)
-		return err
+		return nil, err
 	}
 
 	obj, _, err := decoder.Decode(yamlFile, nil, nil)
 	if err != nil {
 		logger.Errorf("failed to decode plugin resources yaml file, err: %v", err)
-		return err
+		return nil, err
 	}
 
 	clientObj := obj.(client.Object)
 	clientObj.SetNamespace(ns)
-
-	// Apply the resource to the cluster
-	err = r.Create(context.Background(), clientObj)
-	if err != nil {
-		logger.Errorf("failed to create plugin resource, err: %v", err)
-		return err
-	}
-	logger.Infof("Plugin resource %s has been created", filePath)
-	return nil
+	return clientObj, nil
 }
 
-func (r *CnfCertificationSuiteRunReconciler) CreatePluginResources() error {
+func (r *CnfCertificationSuiteRunReconciler) generatePluginResourcesObjs() ([]*client.Object, error) {
 	var pluginDir = "/plugin"
 
 	// Read all  plugin's resources (written in yaml files)
 	yamlFiles, err := os.ReadDir(pluginDir)
 	if err != nil {
 		logger.Errorf("failed to read plugin resources directory, err: %v", err)
-		return err
+		return nil, err
 	}
 
 	// Get controller's ns to set plugin in same ns
 	controllerNS, found := os.LookupEnv(definitions.ControllerNamespaceEnvVar)
 	if !found {
-		return fmt.Errorf("controller ns env var %q not found", definitions.ControllerNamespaceEnvVar)
+		return nil, fmt.Errorf("controller ns env var %q not found", definitions.ControllerNamespaceEnvVar)
 	}
 
 	// Iterate over all plugin's resources
+	pluginObjList := []*client.Object{}
 	decoder := serializer.NewCodecFactory(r.Scheme).UniversalDeserializer()
 	for _, file := range yamlFiles {
 		yamlfilepath := filepath.Join(pluginDir, file.Name())
-		err = r.createSinglePluginResource(yamlfilepath, controllerNS, decoder)
+		obj, err := r.generateSinglePluginResourceObj(yamlfilepath, controllerNS, decoder)
 		if err != nil {
+			return nil, err
+		}
+		pluginObjList = append(pluginObjList, &obj)
+	}
+	return pluginObjList, nil
+}
+
+func (r *CnfCertificationSuiteRunReconciler) ApplyOperationOnPluginResources(op func(obj client.Object) error) error {
+	// Generate plugin resources as objects
+	pluginObjsList, err := r.generatePluginResourcesObjs()
+	if err != nil {
+		return fmt.Errorf("failed to generate plugin resources: %v", err)
+	}
+
+	// Apply given operation on plugin resources
+	for _, obj := range pluginObjsList {
+		err = op(*obj)
+		if err != nil {
+			logger.Errorf("failed to apply operation on plugin resource, err: %v", err)
 			return err
 		}
 	}
 
-	logger.Info("Operator's console plugin was installed successfully.")
 	return nil
 }
 
@@ -364,10 +375,13 @@ func (r *CnfCertificationSuiteRunReconciler) SetupWithManager(mgr ctrl.Manager) 
 		return fmt.Errorf("sidecar app img env var %q not found", definitions.SideCarImageEnvVar)
 	}
 
-	err := r.CreatePluginResources()
+	err := r.ApplyOperationOnPluginResources(func(obj client.Object) error {
+		return r.Create(context.Background(), obj)
+	})
 	if err != nil {
 		return fmt.Errorf("failed to create plugin, err: %v", err)
 	}
+	logger.Info("Operator's console plugin was installed successfully.")
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&cnfcertificationsv1alpha1.CnfCertificationSuiteRun{}).
